@@ -129,22 +129,22 @@ jobs:
               "betplaycito/web/app.js",
           }
           missing = sorted(required.difference(entries))
-          wrong_type = sorted(
+          empty = sorted(
               name for name in required.intersection(entries)
-              if entries[name][-1] != "x"
+              if int(entries[name][2]) <= 0
           )
-          if missing or wrong_type:
-              available_data = sorted(
-                  name for name, metadata in entries.items()
-                  if metadata[-1] == "x"
+          if missing or empty:
+              available_web = sorted(
+                  name for name in entries
+                  if name.startswith("betplaycito/web/")
               )
               raise SystemExit(
                   "Validación del CArchive fallida. "
                   f"Faltantes: {missing or 'ninguno'}. "
-                  f"Tipo incorrecto: {wrong_type or 'ninguno'}. "
-                  f"Datos disponibles: {available_data}"
+                  f"Vacíos: {empty or 'ninguno'}. "
+                  f"Recursos web disponibles: {available_web}"
               )
-          print("CArchive verificado: index.html, app.css y app.js están incluidos como datos.")
+          print("CArchive verificado: index.html, app.css y app.js están incluidos y no están vacíos.")
           '@ | python - $portable
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
