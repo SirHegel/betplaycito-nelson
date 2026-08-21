@@ -110,16 +110,43 @@ jobs:
           if (-not (Test-Path -LiteralPath $portable -PathType Leaf)) {
             throw "PyInstaller no produjo $portable"
           }
-          $listing = (& pyi-archive_viewer -l $portable 2>&1 | Out-String)
-          if ($listing -notmatch "betplaycito[/\\]web[/\\]index\.html") {
-            throw "El ejecutable no contiene betplaycito/web/index.html"
+          @'
+          from pathlib import Path
+          import sys
+
+          from PyInstaller.archive.readers import CArchiveReader
+
+
+          executable = Path(sys.argv[1])
+          archive = CArchiveReader(str(executable))
+          entries = {
+              name.replace("\\", "/").removeprefix("./"): metadata
+              for name, metadata in archive.toc.items()
           }
-          if ($listing -notmatch "betplaycito[/\\]web[/\\]app\.css") {
-            throw "El ejecutable no contiene betplaycito/web/app.css"
+          required = {
+              "betplaycito/web/index.html",
+              "betplaycito/web/app.css",
+              "betplaycito/web/app.js",
           }
-          if ($listing -notmatch "betplaycito[/\\]web[/\\]app\.js") {
-            throw "El ejecutable no contiene betplaycito/web/app.js"
-          }
+          missing = sorted(required.difference(entries))
+          wrong_type = sorted(
+              name for name in required.intersection(entries)
+              if entries[name][-1] != "x"
+          )
+          if missing or wrong_type:
+              available_data = sorted(
+                  name for name, metadata in entries.items()
+                  if metadata[-1] == "x"
+              )
+              raise SystemExit(
+                  "Validación del CArchive fallida. "
+                  f"Faltantes: {missing or 'ninguno'}. "
+                  f"Tipo incorrecto: {wrong_type or 'ninguno'}. "
+                  f"Datos disponibles: {available_data}"
+              )
+          print("CArchive verificado: index.html, app.css y app.js están incluidos como datos.")
+          '@ | python - $portable
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Firmar ejecutable portable
         if: env.WINDOWS_CERTIFICATE_BASE64 != '' && env.WINDOWS_CERTIFICATE_PASSWORD != ''
