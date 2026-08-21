@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BetPlaycito Nelson
+Comment=Dashboard local de tendencias de fútbol
+Exec="/RUTA/AL/PROYECTO/Iniciar BetPlaycito Nelson.sh"
+Icon=/RUTA/AL/PROYECTO/betplaycito-nelson.svg
+Terminal=false
+Categories=Office;Utility;
+StartupNotify=true

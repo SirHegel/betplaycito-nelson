@@ -1,0 +1,40 @@
+# Datos privados y persistencia local
+config.local.json
+.env
+datos/*
+!datos/.gitkeep
+respaldos/*
+!respaldos/.gitkeep
+
+# Bases de datos y credenciales
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+
+# Salidas de compilación
+dist/
+*.pyz
+/Iniciar BetPlaycito Nelson.sh
+/BetPlaycito Nelson.desktop
+/betplaycito-nelson.svg
+
+# Python y editores
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

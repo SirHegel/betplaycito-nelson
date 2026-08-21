@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#071713">
+    <meta name="description" content="Panel privado para registrar y analizar frecuencias de fútbol.">
+    <title>BetPlaycito Nelson</title>
+    <link rel="stylesheet" href="/app.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido</a>
+
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <main id="auth-screen" class="auth-screen">
+      <section class="auth-intro" aria-labelledby="auth-brand-title">
+        <div class="brand-mark brand-mark--large" aria-hidden="true">
+          <span>BN</span>
+        </div>
+        <p class="eyebrow">Centro de análisis deportivo</p>
+        <h1 id="auth-brand-title">BetPlaycito<br><span>Nelson</span></h1>
+        <p class="auth-intro__copy">
+          Convierte cada dato que registras en porcentajes claros, comparables y con historial permanente.
+        </p>
+        <div class="auth-feature-list" aria-label="Características">
+          <span><i aria-hidden="true"></i> Datos auditables</span>
+          <span><i aria-hidden="true"></i> Comparación por equipos</span>
+          <span><i aria-hidden="true"></i> Respaldos descargables</span>
+        </div>
+      </section>
+
+      <section class="auth-panel" aria-label="Acceso de administrador">
+        <div class="auth-card">
+          <div class="auth-card__heading">
+            <p class="eyebrow">Área privada</p>
+            <h2 id="auth-title">Iniciar sesión</h2>
+            <p id="auth-subtitle">Ingresa con tu cuenta de administrador.</p>
+          </div>
+
+          <form id="login-form" class="form-stack" novalidate>
+            <label class="field">
+              <span>Usuario</span>
+              <input id="login-username" name="username" type="text" autocomplete="username" required maxlength="80">
+            </label>
+            <label class="field">
+              <span>Contraseña</span>
+              <span class="password-field">
+                <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+                <button class="icon-button password-toggle" type="button" data-password-target="login-password" aria-label="Mostrar contraseña">
+                  <span aria-hidden="true">◉</span>
+                </button>
+              </span>
+            </label>
+            <p id="login-error" class="form-error" role="alert" hidden></p>
+            <button class="button button--primary button--wide" type="submit">
+              <span>Entrar al panel</span><span aria-hidden="true">→</span>
+            </button>
+          </form>
+
+          <form id="setup-form" class="form-stack" novalidate hidden>
+            <div class="callout callout--info">
+              <strong>Configuración inicial</strong>
+              <span>Crea el primer administrador usando el código entregado con la instalación.</span>
+            </div>
+            <label class="field">
+              <span>Código de configuración</span>
+              <input name="token" type="password" autocomplete="off" required>
+            </label>
+            <label class="field">
+              <span>Nombre de administrador</span>
+              <input name="username" type="text" autocomplete="username" required maxlength="80">
+            </label>
+            <label class="field">
+              <span>Nueva contraseña</span>
+              <span class="password-field">
+                <input id="setup-password" name="password" type="password" autocomplete="new-password" required minlength="8">
+                <button class="icon-button password-toggle" type="button" data-password-target="setup-password" aria-label="Mostrar contraseña">
+                  <span aria-hidden="true">◉</span>
+                </button>
+              </span>
+            </label>
+            <p id="setup-error" class="form-error" role="alert" hidden></p>
+            <button class="button button--primary button--wide" type="submit">Crear administrador</button>
+          </form>
+
+          <p class="auth-security"><span aria-hidden="true">◆</span> Tus credenciales no se guardan en esta página.</p>
+        </div>
+      </section>
+    </main>
+
+    <div id="app-shell" class="app-shell" hidden>
+      <aside id="sidebar" class="sidebar" aria-label="Navegación principal">
+        <div class="sidebar__brand">
+          <div class="brand-mark" aria-hidden="true"><span>BN</span></div>
+          <div><strong>BetPlaycito</strong><span>Nelson</span></div>
+        </div>
+
+        <nav class="sidebar__nav">
+          <button class="nav-link is-active" type="button" data-view="dashboard" aria-current="page">
+            <span class="nav-icon" aria-hidden="true">⌁</span><span>Resumen</span>
+          </button>
+          <button class="nav-link" type="button" data-view="history">
+            <span class="nav-icon" aria-hidden="true">↻</span><span>Historial</span>
+          </button>
+          <button class="nav-link" type="button" data-view="backups">
+            <span class="nav-icon" aria-hidden="true">⇩</span><span>Datos y respaldos</span>
+          </button>
+          <button class="nav-link" type="button" data-view="settings">
+            <span class="nav-icon" aria-hidden="true">⚙</span><span>Seguridad</span>
+          </button>
+          <button class="nav-link" type="button" data-view="help">
+            <span class="nav-icon" aria-hidden="true">?</span><span>Ayuda</span>
+          </button>
+        </nav>
+
+        <div class="sidebar__footer">
+          <div class="session-user">
+            <span class="avatar" id="sidebar-avatar" aria-hidden="true">A</span>
+            <span><small>Administrador</small><strong id="sidebar-username">—</strong></span>
+          </div>
+          <button id="logout-button" class="nav-link nav-link--quiet" type="button">
+            <span class="nav-icon" aria-hidden="true">↪</span><span>Cerrar sesión</span>
+          </button>
+          <button id="shutdown-button" class="nav-link nav-link--quiet" type="button" hidden>
+            <span class="nav-icon" aria-hidden="true">◉</span><span>Cerrar aplicación</span>
+          </button>
+        </div>
+      </aside>
+
+      <div id="sidebar-scrim" class="sidebar-scrim" hidden></div>
+
+      <div class="workspace">
+        <header class="topbar">
+          <div class="topbar__leading">
+            <button id="menu-button" class="icon-button menu-button" type="button" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">☰</button>
+            <div>
+              <p class="eyebrow">Panel de control</p>
+              <h1 id="view-title">Resumen general</h1>
+            </div>
+          </div>
+          <div class="topbar__actions">
+            <span id="save-status" class="save-status"><i aria-hidden="true"></i><span>Conectando…</span></span>
+            <button id="open-match-button" class="button button--secondary" type="button">
+              <span aria-hidden="true">＋</span><span class="button__desktop-label">Registrar partido</span>
+            </button>
+            <span id="topbar-avatar" class="avatar" aria-hidden="true">A</span>
+          </div>
+        </header>
+
+        <main id="main-content" class="main-content" tabindex="-1">
+          <section id="view-dashboard" class="view" data-view-panel="dashboard">
+            <div class="dashboard-hero">
+              <div>
+                <p class="eyebrow">Frecuencias históricas</p>
+                <h2>Tu cancha de datos, <span id="welcome-name">administrador</span></h2>
+                <p>Registra observaciones, encuentra tendencias y compara equipos sin perder el rastro de ningún cambio.</p>
+              </div>
+              <button id="hero-match-button" class="button button--primary" type="button"><span aria-hidden="true">＋</span> Nuevo partido</button>
+            </div>
+
+            <div class="kpi-grid" aria-label="Indicadores principales">
+              <article class="kpi-card kpi-card--lime">
+                <span class="kpi-card__icon" aria-hidden="true">Σ</span>
+                <div><span>Observaciones</span><strong id="kpi-observations">0</strong><small>Base calculada</small></div>
+              </article>
+              <article class="kpi-card kpi-card--cyan">
+                <span class="kpi-card__icon" aria-hidden="true">↕</span>
+                <div><span>Ajustes guardados</span><strong id="kpi-adjustments">0</strong><small>Movimientos auditables</small></div>
+              </article>
+              <article class="kpi-card kpi-card--coral">
+                <span class="kpi-card__icon" aria-hidden="true">⚽</span>
+                <div><span>Partidos</span><strong id="kpi-matches">0</strong><small>Registros detallados</small></div>
+              </article>
+              <article class="kpi-card kpi-card--violet">
+                <span class="kpi-card__icon" aria-hidden="true">◆</span>
+                <div><span>Equipos activos</span><strong id="kpi-teams">0</strong><small id="kpi-scope">Vista global</small></div>
+              </article>
+            </div>
+
+            <section class="panel teams-panel" aria-labelledby="teams-title">
+              <div class="panel__heading panel__heading--responsive">
+                <div>
+                  <p class="eyebrow">Filtro opcional</p>
+                  <h2 id="teams-title">Equipos y alcance</h2>
+                  <p>Sin selección ves el total global. Selecciona varios para agregarlos y compararlos.</p>
+                </div>
+                <button id="manage-teams-button" class="button button--ghost" type="button">Gestionar equipos</button>
+              </div>
+              <form id="add-team-form" class="inline-form">
+                <label class="sr-only" for="new-team-name">Nombre del nuevo equipo</label>
+                <input id="new-team-name" name="name" type="text" maxlength="100" placeholder="Nombre del nuevo equipo" autocomplete="off">
+                <button class="button button--secondary" type="submit"><span aria-hidden="true">＋</span> Crear equipo</button>
+              </form>
+              <div id="team-chips" class="team-chips" aria-label="Seleccionar equipos"></div>
+              <div class="scope-toolbar">
+                <p id="scope-summary"><strong>Vista global</strong> · incluye todos los registros.</p>
+                <label class="compact-field" for="entry-team-select">
+                  <span>Guardar nuevos datos en</span>
+                  <select id="entry-team-select"><option value="">Global</option></select>
+                </label>
+              </div>
+            </section>
+
+            <section id="comparison-panel" class="panel comparison-panel" aria-labelledby="comparison-title">
+              <div class="panel__heading panel__heading--responsive">
+                <div>
+                  <p class="eyebrow">Cara a cara</p>
+                  <h2 id="comparison-title">Comparador por equipos</h2>
+                  <p id="comparison-subtitle">Selecciona al menos dos equipos para contrastar sus porcentajes.</p>
+                </div>
+                <label class="compact-field" for="comparison-group">
+                  <span>Variable</span>
+                  <select id="comparison-group"></select>
+                </label>
+              </div>
+              <div id="comparison-content" class="comparison-content">
+                <div class="empty-inline"><span aria-hidden="true">◇</span><p>Elige dos o más equipos arriba.</p></div>
+              </div>
+            </section>
+
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Marcadores acumulados</p>
+                <h2>Variables en competencia</h2>
+              </div>
+              <p>Cada círculo usa su propio total de observaciones.</p>
+            </div>
+
+            <div id="metric-grid" class="metric-grid" aria-live="polite" aria-busy="true">
+              <div class="metric-skeleton"></div>
+              <div class="metric-skeleton"></div>
+              <div class="metric-skeleton"></div>
+            </div>
+
+            <section id="insight-panel" class="insight-panel" aria-labelledby="insight-title">
+              <div class="insight-panel__icon" aria-hidden="true">✦</div>
+              <div>
+                <p class="eyebrow">Lectura automática</p>
+                <h2 id="insight-title">Cómo leer estos datos</h2>
+                <p id="insight-copy">Selecciona una variable para ver una explicación sencilla de su resultado.</p>
+                <p id="insight-formula" class="formula"></p>
+              </div>
+            </section>
+          </section>
+
+          <section id="view-history" class="view" data-view-panel="history" hidden>
+            <div class="page-heading">
+              <div><p class="eyebrow">Memoria inalterable</p><h2>Historial de movimientos</h2><p>Las correcciones crean movimientos inversos; los registros originales permanecen visibles.</p></div>
+              <button id="history-refresh" class="button button--secondary" type="button">↻ Actualizar</button>
+            </div>
+            <section class="panel">
+              <form id="history-filters" class="filter-bar">
+                <label class="compact-field"><span>Tipo</span><select name="type"><option value="all">Todos</option><option value="adjustment">Ajustes</option><option value="match">Partidos</option></select></label>
+                <label class="compact-field"><span>Variable</span><select id="history-variable" name="variable"><option value="all">Todas</option></select></label>
+                <label class="compact-field filter-search"><span>Buscar</span><input name="search" type="search" placeholder="Equipo, nota o variable"></label>
+              </form>
+              <p class="filter-note"><span aria-hidden="true">i</span> La variable y la búsqueda filtran únicamente los movimientos cargados en esta página. El filtro de tipo sí consulta todo el historial.</p>
+              <div class="history-table-wrap">
+                <table class="history-table">
+                  <thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Equipo</th><th>Cambio</th><th>Nota</th></tr></thead>
+                  <tbody id="history-body"></tbody>
+                </table>
+                <div id="history-empty" class="empty-state" hidden><span aria-hidden="true">↻</span><h3>Aún no hay movimientos</h3><p>Los ajustes y partidos aparecerán aquí.</p></div>
+              </div>
+              <nav class="pagination" aria-label="Paginación del historial">
+                <button id="history-prev" class="button button--ghost" type="button">← Anterior</button>
+                <span id="history-page">Página 1 de 1</span>
+                <button id="history-next" class="button button--ghost" type="button">Siguiente →</button>
+              </nav>
+            </section>
+          </section>
+
+          <section id="view-backups" class="view" data-view-panel="backups" hidden>
+            <div class="page-heading"><div><p class="eyebrow">Control de tus datos</p><h2>Respaldos y exportación</h2><p>Descarga copias periódicas y conserva tus estadísticas fuera del aplicativo.</p></div></div>
+            <div class="backup-grid">
+              <article class="action-card"><span class="action-card__icon action-card__icon--lime" aria-hidden="true">{ }</span><h3>Respaldo completo</h3><p>Archivo JSON con datos e historial, ideal para restaurar el sistema.</p><button class="button button--primary" type="button" data-export="json">Descargar JSON</button></article>
+              <article class="action-card"><span class="action-card__icon action-card__icon--cyan" aria-hidden="true">CSV</span><h3>Abrir en Excel</h3><p>Tabla compatible con Excel y otras herramientas de análisis.</p><button class="button button--secondary" type="button" data-export="csv">Descargar CSV</button></article>
+              <article id="xlsx-card" class="action-card"><span class="action-card__icon action-card__icon--violet" aria-hidden="true">XLS</span><h3>Libro de Excel</h3><p>Exportación organizada en hojas cuando está disponible.</p><button class="button button--secondary" type="button" data-export="xlsx">Descargar XLSX</button></article>
+              <article id="server-backup-card" class="action-card"><span class="action-card__icon action-card__icon--coral" aria-hidden="true">⇩</span><h3>Copia en el equipo</h3><p>Solicita al aplicativo una copia fechada en su carpeta de respaldos.</p><button id="create-backup-button" class="button button--secondary" type="button">Crear copia ahora</button></article>
+            </div>
+            <section id="restore-panel" class="panel restore-panel" aria-labelledby="restore-title">
+              <div><p class="eyebrow">Recuperación</p><h2 id="restore-title">Restaurar desde JSON</h2><p>Al confirmar, el sistema crea una copia de seguridad y luego reemplaza los equipos, ajustes y partidos actuales.</p></div>
+              <label class="file-drop" for="restore-file"><span aria-hidden="true">⇧</span><strong>Elegir respaldo JSON</strong><small id="restore-file-name">Ningún archivo seleccionado</small><input id="restore-file" type="file" accept="application/json,.json"></label>
+              <button id="restore-button" class="button button--primary" type="button" disabled>Validar y restaurar</button>
+            </section>
+          </section>
+
+          <section id="view-settings" class="view" data-view-panel="settings" hidden>
+            <div class="page-heading"><div><p class="eyebrow">Cuenta de administrador</p><h2>Seguridad</h2><p>Actualiza tu contraseña sin exponerla en el navegador.</p></div></div>
+            <section class="panel narrow-panel">
+              <form id="password-form" class="form-stack" novalidate>
+                <label class="field"><span>Contraseña actual</span><input name="current_password" type="password" autocomplete="current-password" required></label>
+                <label class="field"><span>Nueva contraseña</span><input name="new_password" type="password" autocomplete="new-password" minlength="8" required><small>Usa al menos 8 caracteres.</small></label>
+                <label class="field"><span>Confirmar nueva contraseña</span><input name="confirmation" type="password" autocomplete="new-password" minlength="8" required></label>
+                <p id="password-error" class="form-error" role="alert" hidden></p>
+                <button class="button button--primary" type="submit">Cambiar contraseña</button>
+              </form>
+            </section>
+          </section>
+
+          <section id="view-help" class="view" data-view-panel="help" hidden>
+            <div class="page-heading"><div><p class="eyebrow">Guía rápida</p><h2>Cómo funciona</h2><p>Una lectura sencilla para registrar datos correctamente.</p></div></div>
+            <div class="help-layout">
+              <section class="panel prose-panel">
+                <h3>Porcentajes</h3>
+                <p>Cada círculo divide el conteo de una opción entre el total de su propia variable. Por ejemplo: 100 Gol/Gol entre 500 observaciones equivale a 20,0 %.</p>
+                <div class="formula-card">100 ÷ (100 + 400) × 100 = <strong>20,0 %</strong></div>
+                <h3>Umbrales</h3>
+                <dl class="definitions">
+                  <div><dt>Más de 2.5 goles</dt><dd>El partido tuvo 3 goles o más.</dd></div>
+                  <div><dt>Menos de 2.5 goles</dt><dd>El partido tuvo entre 0 y 2 goles.</dd></div>
+                  <div><dt>Gol/Gol</dt><dd>Los dos equipos marcaron al menos un gol.</dd></div>
+                  <div><dt>Más de 9.5</dt><dd>Hubo 10 o más córners o tiros al arco, según la tarjeta.</dd></div>
+                  <div><dt>Menos de 9.5</dt><dd>Hubo entre 0 y 9.</dd></div>
+                </dl>
+              </section>
+              <aside class="panel help-aside">
+                <span class="help-aside__icon" aria-hidden="true">!</span>
+                <h3>Interpretación responsable</h3>
+                <p>Estos porcentajes describen únicamente la información registrada. Son una frecuencia histórica y no garantizan resultados futuros.</p>
+                <h3>Correcciones sin borrado</h3>
+                <p>Usa el botón menos para corregir. El sistema registra la resta como un nuevo movimiento y conserva el anterior.</p>
+                <h3>Protege tu trabajo</h3>
+                <p>Descarga con frecuencia un respaldo JSON desde Datos y respaldos.</p>
+              </aside>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <nav class="mobile-nav" aria-label="Navegación móvil">
+        <button class="is-active" type="button" data-view="dashboard"><span aria-hidden="true">⌁</span><small>Resumen</small></button>
+        <button type="button" data-view="history"><span aria-hidden="true">↻</span><small>Historial</small></button>
+        <button id="mobile-match-button" class="mobile-nav__primary" type="button" aria-label="Registrar partido"><span aria-hidden="true">＋</span></button>
+        <button type="button" data-view="backups"><span aria-hidden="true">⇩</span><small>Datos</small></button>
+        <button type="button" data-view="help"><span aria-hidden="true">?</span><small>Ayuda</small></button>
+      </nav>
+    </div>
+
+    <dialog id="match-dialog" class="dialog">
+      <form id="match-form" method="dialog" class="dialog__surface" novalidate>
+        <header class="dialog__header"><div><p class="eyebrow">Registro opcional</p><h2>Agregar partido detallado</h2><p>El sistema convierte el marcador y las cifras en todas las variables compatibles.</p></div><button class="icon-button" type="button" data-close-dialog="match-dialog" aria-label="Cerrar">×</button></header>
+        <div class="dialog__body">
+          <div class="match-team-grid">
+            <label class="field"><span>Equipo local</span><select name="home_team_id"><option value="">Sin especificar</option></select></label>
+            <label class="field"><span>Equipo visitante</span><select name="away_team_id"><option value="">Sin especificar</option></select></label>
+            <label class="field score-field"><span>Goles local</span><input name="home_goals" type="number" min="0" max="100" inputmode="numeric" required></label>
+            <label class="field score-field"><span>Goles visitante</span><input name="away_goals" type="number" min="0" max="100" inputmode="numeric" required></label>
+          </div>
+          <details class="details-panel">
+            <summary>Agregar córners y tiros al arco <span aria-hidden="true">＋</span></summary>
+            <div class="match-detail-grid">
+              <label class="field"><span>Córners local</span><input name="corners_home" type="number" min="0" max="99" inputmode="numeric"></label>
+              <label class="field"><span>Córners visitante</span><input name="corners_away" type="number" min="0" max="99" inputmode="numeric"></label>
+              <label class="field"><span>Tiros al arco local</span><input name="shots_on_target_home" type="number" min="0" max="99" inputmode="numeric"></label>
+              <label class="field"><span>Tiros al arco visitante</span><input name="shots_on_target_away" type="number" min="0" max="99" inputmode="numeric"></label>
+            </div>
+          </details>
+          <label class="field"><span>Nota opcional</span><textarea name="note" rows="2" maxlength="500" placeholder="Jornada, torneo o contexto"></textarea></label>
+          <p id="match-error" class="form-error" role="alert" hidden></p>
+        </div>
+        <footer class="dialog__footer"><button class="button button--ghost" type="button" data-close-dialog="match-dialog">Cancelar</button><button class="button button--primary" type="submit">Guardar partido</button></footer>
+      </form>
+    </dialog>
+
+    <dialog id="teams-dialog" class="dialog">
+      <section class="dialog__surface">
+        <header class="dialog__header"><div><p class="eyebrow">Organización</p><h2>Gestionar equipos</h2><p>Archivar oculta un equipo de la selección, pero conserva todos sus datos.</p></div><button class="icon-button" type="button" data-close-dialog="teams-dialog" aria-label="Cerrar">×</button></header>
+        <div class="dialog__body"><div id="team-manager-list" class="team-manager-list"></div></div>
+        <footer class="dialog__footer"><button class="button button--primary" type="button" data-close-dialog="teams-dialog">Listo</button></footer>
+      </section>
+    </dialog>
+
+    <dialog id="confirm-dialog" class="dialog dialog--small">
+      <form method="dialog" class="dialog__surface">
+        <header class="dialog__header"><div><p class="eyebrow">Confirmación</p><h2 id="confirm-title">Confirmar acción</h2></div><button class="icon-button" value="cancel" aria-label="Cerrar">×</button></header>
+        <div class="dialog__body"><p id="confirm-message"></p></div>
+        <footer class="dialog__footer"><button class="button button--ghost" value="cancel">Cancelar</button><button id="confirm-action" class="button button--primary" value="confirm">Confirmar</button></footer>
+      </form>
+    </dialog>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

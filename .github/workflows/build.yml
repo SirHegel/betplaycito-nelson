@@ -1,0 +1,42 @@
+name: Verificar y construir
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verificar sintaxis
+        run: python scripts/check_syntax.py
+
+      - name: Construir aplicativo
+        run: bash scripts/build.sh
+
+      - name: Publicar artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetPlaycito-Nelson-linux
+          path: |
+            dist/BetPlaycito-Nelson.pyz
+            dist/Iniciar BetPlaycito Nelson.sh
+            dist/betplaycito-nelson.svg
+            dist/BetPlaycito Nelson.desktop.example
+            dist/config.example.json
+            dist/LEEME.md
+          if-no-files-found: error
