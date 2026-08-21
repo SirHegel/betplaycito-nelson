@@ -12,6 +12,7 @@
     dateStyle: "medium",
     timeStyle: "short",
   });
+  const PREVIEW_MODE = window.location.protocol === "file:";
 
   const VIEW_TITLES = {
     dashboard: "Resumen general",
@@ -38,6 +39,71 @@
     local: "Indica si el equipo local logró marcar al menos un gol.",
     corners: "Más de 9.5 corresponde a 10 o más córners totales; menos, entre 0 y 9.",
     shots: "Más de 9.5 corresponde a 10 o más tiros al arco totales; menos, entre 0 y 9.",
+  };
+
+  const PREVIEW_GROUPS = [
+    { key: "result", label: "Resultado del partido", categories: ["home_win", "draw", "away_win"] },
+    { key: "goals", label: "Total de goles 2.5", categories: ["over25", "under25"] },
+    { key: "btts", label: "Ambos equipos marcan", categories: ["btts_yes", "btts_no"] },
+    { key: "local_goal", label: "Marcador local", categories: ["local_scored", "local_blank"] },
+    { key: "corners", label: "Tiros de esquina 9.5", categories: ["corners_over95", "corners_under95"] },
+    { key: "shots_on_target", label: "Tiros al arco 9.5", categories: ["shots_over95", "shots_under95"] },
+  ];
+
+  const PREVIEW_LABELS = {
+    home_win: "Ganó el local",
+    draw: "Empate",
+    away_win: "Ganó el visitante",
+    over25: "Más de 2.5 goles",
+    under25: "Menos de 2.5 goles",
+    btts_yes: "Gol / Gol",
+    btts_no: "No Gol / Gol",
+    local_scored: "Local marcó",
+    local_blank: "Local no marcó",
+    corners_over95: "Más de 9.5 tiros de esquina",
+    corners_under95: "Menos de 9.5 tiros de esquina",
+    shots_over95: "Más de 9.5 tiros al arco",
+    shots_under95: "Menos de 9.5 tiros al arco",
+  };
+
+  const PREVIEW_TEAMS = [
+    { id: 1, name: "Atlético Nacional", archived: false },
+    { id: 2, name: "Millonarios", archived: false },
+    { id: 3, name: "Junior FC", archived: false },
+    { id: 4, name: "América de Cali", archived: false },
+    { id: 5, name: "Deportes Tolima", archived: false },
+  ];
+
+  const PREVIEW_TEAM_COUNTS = {
+    1: [62, 21, 31, 67, 47, 59, 55, 74, 40, 61, 53, 58, 56],
+    2: [55, 28, 35, 58, 60, 64, 54, 71, 47, 57, 61, 52, 66],
+    3: [48, 25, 39, 64, 48, 55, 57, 69, 43, 63, 49, 60, 52],
+    4: [51, 31, 34, 61, 55, 67, 49, 73, 43, 56, 60, 55, 61],
+    5: [46, 30, 32, 53, 55, 50, 58, 64, 44, 59, 49, 51, 57],
+  };
+
+  const PREVIEW_HISTORY = [
+    { type: "match", created_at: "2026-08-20T23:42:00Z", home_team_name: "Atlético Nacional", away_team_name: "Millonarios", home_goals: 2, away_goals: 1, corners_home: 6, corners_away: 5, shots_on_target_home: 7, shots_on_target_away: 4, note: "Liga · fecha 8", categories: ["home_win", "over25", "btts_yes"] },
+    { type: "adjustment", created_at: "2026-08-20T17:18:00Z", variable: "btts_yes", variable_label: "Gol / Gol", team_name: "Junior FC", delta: 12, note: "Consolidado últimas jornadas" },
+    { type: "match", created_at: "2026-08-19T21:06:00Z", home_team_name: "América de Cali", away_team_name: "Deportes Tolima", home_goals: 1, away_goals: 1, corners_home: 4, corners_away: 4, shots_on_target_home: 5, shots_on_target_away: 3, note: "Liga · fecha 7", categories: ["draw", "under25", "btts_yes"] },
+    { type: "adjustment", created_at: "2026-08-19T14:25:00Z", variable: "corners_over95", variable_label: "Más de 9.5 tiros de esquina", team_name: "Millonarios", delta: 8, note: "Carga histórica verificada" },
+    { type: "adjustment", created_at: "2026-08-18T19:32:00Z", variable: "home_win", variable_label: "Ganó el local", team_name: "Atlético Nacional", delta: 10, note: "Muestra de demostración" },
+    { type: "match", created_at: "2026-08-18T01:12:00Z", home_team_name: "Junior FC", away_team_name: "América de Cali", home_goals: 3, away_goals: 2, corners_home: 8, corners_away: 4, shots_on_target_home: 9, shots_on_target_away: 5, note: "Liga · fecha 6", categories: ["home_win", "over25", "btts_yes"] },
+  ];
+
+  const PREVIEW_STATE = {
+    authenticated: true,
+    setup_required: false,
+    user: { id: 1, username: "Nelson Ruiz" },
+    features: { teams: true, matches: true, backups: true, restore: true, xlsx: true, shutdown: false, persistent_sqlite: false },
+    variables: PREVIEW_GROUPS.flatMap((group) => group.categories.map((key) => ({
+      key,
+      group: group.key,
+      label: PREVIEW_LABELS[key],
+      alternatives: group.categories.filter((candidate) => candidate !== key),
+    }))),
+    groups: PREVIEW_GROUPS,
+    version: "demo",
   };
 
   const state = {
@@ -69,7 +135,83 @@
     }
   }
 
+  function previewDashboard(teamIds = []) {
+    const ids = teamIds.length ? teamIds : PREVIEW_TEAMS.map((team) => team.id);
+    const flatCounts = Array.from({ length: 13 }, (_, index) => ids.reduce(
+      (sum, id) => sum + (PREVIEW_TEAM_COUNTS[id]?.[index] || 0),
+      0
+    ));
+    let cursor = 0;
+    const groups = PREVIEW_GROUPS.map((definition) => {
+      const counts = definition.categories.map(() => flatCounts[cursor++]);
+      const total = counts.reduce((sum, count) => sum + count, 0);
+      return {
+        key: definition.key,
+        label: definition.label,
+        total,
+        categories: definition.categories.map((key, index) => {
+          const count = counts[index];
+          const manualCount = Math.round(count * 0.72);
+          return {
+            key,
+            label: PREVIEW_LABELS[key],
+            count,
+            percentage: total ? (count / total) * 100 : 0,
+            manual_count: manualCount,
+            match_count: count - manualCount,
+            decrementable_count: manualCount,
+            can_decrement: manualCount > 0,
+          };
+        }),
+      };
+    });
+    const observations = groups.reduce((sum, group) => sum + group.total, 0);
+    return {
+      groups,
+      totals: {
+        observations,
+        adjustments: ids.length * 94 + 17,
+        adjustment_units: Math.round(observations * 0.72),
+        matches: ids.length * 58 + 23,
+      },
+    };
+  }
+
+  async function previewApi(path, options = {}) {
+    await Promise.resolve();
+    const method = String(options.method || "GET").toUpperCase();
+    if (method !== "GET") {
+      throw new ApiError(
+        "Esta es una vista de demostración: puedes explorarla, pero los cambios solo se guardan desde la aplicación instalada.",
+        0,
+        "preview_read_only"
+      );
+    }
+    const url = new URL(path, "file:///");
+    if (url.pathname === "/api/setup/status") return { setup_required: false };
+    if (url.pathname === "/api/state") return structuredClone(PREVIEW_STATE);
+    if (url.pathname === "/api/teams") return structuredClone(PREVIEW_TEAMS);
+    if (url.pathname === "/api/dashboard") {
+      const ids = (url.searchParams.get("team_ids") || "")
+        .split(",")
+        .map(Number)
+        .filter((value) => Number.isInteger(value) && PREVIEW_TEAM_COUNTS[value]);
+      return previewDashboard(ids);
+    }
+    if (url.pathname === "/api/history") {
+      return {
+        items: structuredClone(PREVIEW_HISTORY),
+        page: 1,
+        page_size: 25,
+        total: PREVIEW_HISTORY.length,
+        total_pages: 1,
+      };
+    }
+    throw new ApiError("Esta acción no está disponible en la vista de demostración.", 0, "preview_unavailable");
+  }
+
   async function api(path, options = {}) {
+    if (PREVIEW_MODE) return previewApi(path, options);
     const headers = new Headers(options.headers || {});
     headers.set("Accept", "application/json");
     let body = options.body;
@@ -131,6 +273,26 @@
   function formatPercent(value) {
     const number = Number(value);
     return `${percentFormatter.format(Number.isFinite(number) ? number : 0)} %`;
+  }
+
+  function setAnimatedCount(element, value) {
+    const target = Math.max(0, Number(value) || 0);
+    const previous = Number(element.dataset.numericValue) || 0;
+    element.dataset.numericValue = String(target);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || previous === target) {
+      element.textContent = formatCount(target);
+      return;
+    }
+    const started = performance.now();
+    const duration = 720;
+    const tick = (now) => {
+      if (Number(element.dataset.numericValue) !== target) return;
+      const progress = Math.min(1, (now - started) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      element.textContent = formatCount(Math.round(previous + (target - previous) * eased));
+      if (progress < 1) window.requestAnimationFrame(tick);
+    };
+    window.requestAnimationFrame(tick);
   }
 
   function safeDate(value) {
@@ -227,6 +389,21 @@
 
   async function boot() {
     bindEvents();
+    if (PREVIEW_MODE) {
+      document.documentElement.dataset.preview = "true";
+      document.body.classList.add("is-preview");
+      $("#preview-banner").hidden = false;
+      state.selectedTeamIds = new Set([1, 2]);
+      state.entryTeamId = "1";
+      await hydrateApp(structuredClone(PREVIEW_STATE));
+      await loadComparison();
+      setSaveStatus("saved", "Vista demo");
+      window.setTimeout(() => showToast(
+        "Demo lista para explorar",
+        "Los números son ficticios y ninguna acción se guarda en este modo."
+      ), 650);
+      return;
+    }
     try {
       const setupStatus = await api("/api/setup/status");
       if (setupStatus?.setup_required) {
@@ -345,6 +522,10 @@
   }
 
   async function handleLogout() {
+    if (PREVIEW_MODE) {
+      showToast("Vista de demostración", "El cierre de sesión está disponible en la aplicación instalada.");
+      return;
+    }
     try {
       await api("/api/logout", { method: "POST" });
     } catch (error) {
@@ -525,9 +706,9 @@
   function renderDashboard() {
     const dashboard = state.dashboard || {};
     const totals = dashboard.totals || {};
-    $("#kpi-observations").textContent = formatCount(totals.observations);
-    $("#kpi-adjustments").textContent = formatCount(totals.adjustments);
-    $("#kpi-matches").textContent = formatCount(totals.matches);
+    setAnimatedCount($("#kpi-observations"), totals.observations);
+    setAnimatedCount($("#kpi-adjustments"), totals.adjustments);
+    setAnimatedCount($("#kpi-matches"), totals.matches);
     renderMetrics(Array.isArray(dashboard.groups) ? dashboard.groups : []);
     populateComparisonGroups();
   }
@@ -575,7 +756,7 @@
       return;
     }
 
-    grid.innerHTML = groups.map((group) => metricCardHtml(group)).join("");
+    grid.innerHTML = groups.map((group, index) => metricCardHtml(group, index)).join("");
     const firstGroup = groups[0];
     const selectedGroup = groups.find((group) => String(group.key) === String(state.activeMetricGroupKey)) || firstGroup;
     const categories = normalizeCategories(selectedGroup);
@@ -583,7 +764,7 @@
     if (selectedKey) selectMetricCategory(selectedGroup.key, selectedKey, false);
   }
 
-  function metricCardHtml(group) {
+  function metricCardHtml(group, cardIndex = 0) {
     const categories = normalizeCategories(group);
     const colors = groupColors(group);
     const total = Math.max(0, Number(group.total) || categories.reduce((sum, item) => sum + item.count, 0));
@@ -594,7 +775,7 @@
     let offset = 0;
     const circles = total ? categories.map((category, index) => {
       const percentage = category.percentage;
-      const circle = `<circle class="donut__segment${category.key === selectedKey ? " is-selected" : ""}" data-chart-category="${escapeHtml(category.key)}" pathLength="100" cx="60" cy="60" r="45" stroke="${colors[index % colors.length]}" stroke-dasharray="${percentage} ${100 - percentage}" stroke-dashoffset="${-offset}"><title>${escapeHtml(category.label)}: ${formatPercent(percentage)}</title></circle>`;
+      const circle = `<circle class="donut__segment${category.key === selectedKey ? " is-selected" : ""}" data-chart-category="${escapeHtml(category.key)}" pathLength="100" cx="60" cy="60" r="45" stroke="${colors[index % colors.length]}" stroke-dasharray="${percentage} ${100 - percentage}" stroke-dashoffset="${-offset}" style="--segment-offset:${-offset};--segment-delay:${index * 90}ms"><title>${escapeHtml(category.label)}: ${formatPercent(percentage)}</title></circle>`;
       offset += percentage;
       return circle;
     }).join("") : "";
@@ -614,7 +795,7 @@
     `).join("");
 
     return `
-      <article class="metric-card" data-group-key="${escapeHtml(group.key)}">
+      <article class="metric-card" data-group-key="${escapeHtml(group.key)}" style="--card-index:${cardIndex}">
         <header class="metric-card__header">
           <div><h3>${escapeHtml(group.label)}</h3><p>${formatCount(total)} observaciones en esta variable</p></div>
           <button class="metric-info" type="button" data-metric-info aria-label="Explicar ${escapeHtml(group.label)}">i</button>
@@ -1007,6 +1188,10 @@
   }
 
   async function downloadExport(format, sourceButton) {
+    if (PREVIEW_MODE) {
+      showToast("Descarga desactivada en la demo", "Instala el aplicativo para exportar tus datos reales.");
+      return;
+    }
     setBusy(sourceButton, true, "Preparando…");
     try {
       const response = await fetch(`/api/export?format=${encodeURIComponent(format)}`, {
@@ -1055,6 +1240,11 @@
   }
 
   async function handleRestoreFile(event) {
+    if (PREVIEW_MODE) {
+      event.target.value = "";
+      showToast("Restauración desactivada en la demo", "Esta vista no lee ni modifica respaldos.");
+      return;
+    }
     const file = event.target.files?.[0];
     state.restorePayload = null;
     $("#restore-button").disabled = true;

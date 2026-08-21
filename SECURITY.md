@@ -8,35 +8,38 @@ BetPlaycito Nelson es una herramienta personal, local y de una sola cuenta admin
 
 La autenticación protege frente al acceso casual desde el mismo equipo; no puede proteger los datos si otra persona controla la cuenta del sistema operativo, puede leer los archivos locales o ha comprometido el dispositivo.
 
-## Credenciales y secretos
+## Credencial predeterminada y secretos
 
-El repositorio público nunca debe contener:
+Por decisión funcional, todas las bases nuevas reciben la cuenta pública `NelsonRuiz` con la contraseña inicial indicada en el README. Esa pareja es un valor de arranque, no un secreto ni una barrera frente a otra persona que conozca el proyecto. El servidor conserva únicamente su derivación PBKDF2 y permite reemplazarla desde **Seguridad**.
 
-- usuarios o contraseñas reales;
-- `config.local.json`;
+El repositorio público nunca debe contener otros secretos o datos privados, entre ellos:
+
+- credenciales personales distintas de la cuenta pública de arranque;
+- `config.local.json` con valores privados;
 - cookies o identificadores de sesión;
 - bases SQLite, archivos WAL o SHM;
 - respaldos y exportaciones con datos privados;
 - claves privadas, tokens o volcados de diagnóstico sensibles.
 
-Use la plantilla pública:
+Para reemplazar la cuenta durante un despliegue controlado, use la plantilla:
 
 ```bash
 cp config.example.json config.local.json
 ```
 
-Defina valores propios en la copia. El archivo está cubierto por [`.gitignore`](.gitignore), pero esa exclusión no sustituye revisar lo que se confirma con Git.
+Defina valores propios en la copia. El archivo está cubierto por [`.gitignore`](.gitignore), pero esa exclusión no sustituye revisar lo que se confirma con Git. En una base ya creada, cambiar este archivo no cambia automáticamente el usuario almacenado: use la pantalla de Seguridad.
 
 Recomendaciones:
 
-- use una contraseña larga, exclusiva y no basada en números de identificación;
-- no codifique credenciales en Python, JavaScript, documentación, scripts o capturas;
+- cambie la contraseña inicial pública en equipos compartidos;
+- para una contraseña personal, use una frase larga, exclusiva y no basada en números de identificación;
+- no codifique credenciales personales en Python, JavaScript, documentación, scripts o capturas;
 - no entregue `config.local.json` junto al artefacto público;
 - después de crear el administrador, retire del archivo cualquier contraseña inicial en texto plano o reemplácela por su hash;
 - cambie la contraseña si el archivo se compartió por error;
 - cierre sesión cuando termine en un equipo compartido.
 
-La base almacena PBKDF2-HMAC-SHA-256 con sal y 600 000 iteraciones, y verifica con comparación resistente a temporización. La plantilla acepta una contraseña inicial para facilitar la instalación, pero es preferible generar `admin_password_hash` mediante `--hash-password`, limitar `config.local.json` a modo `600` y evitar conservar texto plano. Los secretos de sesión son aleatorios; SQLite guarda únicamente su SHA-256.
+La base almacena PBKDF2-HMAC-SHA-256 con sal y 600 000 iteraciones, y verifica con comparación resistente a temporización. La plantilla acepta una contraseña inicial para facilitar una configuración personalizada, pero es preferible generar `admin_password_hash` mediante `--hash-password`, limitar `config.local.json` a modo `600` y evitar conservar texto plano. Los secretos de sesión son aleatorios; SQLite guarda únicamente su SHA-256.
 
 ## Red y sesiones
 

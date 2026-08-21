@@ -55,6 +55,12 @@ SQLite es la fuente principal de verdad. Cada cambio de contador se inserta en `
 
 Las escrituras deben usar transacciones. Los totales se obtienen sumando los deltas y la aplicación valida que el resultado no sea menor que cero. Consulte [Modelo de datos](MODELO-DE-DATOS.md).
 
+Los ejecutables nativos guardan la base fuera del programa, dentro del perfil del usuario: `%LOCALAPPDATA%\BetPlaycito Nelson` en Windows, `~/Library/Application Support/BetPlaycito Nelson` en macOS y la ruta XDG `~/.local/share/betplaycito-nelson` en Linux. Así, actualizar o reemplazar el ejecutable no sustituye la base.
+
+### Cuenta inicial
+
+Una base nueva crea automáticamente la cuenta pública de arranque `NelsonRuiz` usando una derivación PBKDF2 incluida en el backend. El texto de la contraseña no se escribe en la base. Una configuración local o las variables de entorno pueden reemplazar esa cuenta antes de crear la base; `BETPLAYCITO_REQUIRE_SETUP=1` conserva el flujo alternativo con código de configuración de una sola vez.
+
 ## Variables de dominio
 
 La versión actual contempla seis grupos:
@@ -111,7 +117,7 @@ Estos cálculos son descriptivos. La interfaz y las exportaciones no deben llama
 
 ## Respaldo y recuperación
 
-`Database.backup` usa la API de respaldo de SQLite y verifica la copia con `PRAGMA integrity_check`. La aplicación guarda automáticamente una copia fechada de una base existente antes del arranque y permite solicitar otras copias desde la interfaz. La base predeterminada es `datos/betplaycito.db` y las copias SQLite se escriben en `respaldos/`.
+`Database.backup` usa la API de respaldo de SQLite y verifica la copia con `PRAGMA integrity_check`. La aplicación guarda automáticamente una copia fechada de una base existente antes del arranque y permite solicitar otras copias desde la interfaz. Desde el código fuente, la base predeterminada es `datos/betplaycito.db` y las copias SQLite se escriben en `respaldos/`. Los paquetes nativos usan las ubicaciones persistentes por plataforma descritas arriba.
 
 El JSON completo es el formato de intercambio que la aplicación valida para restaurar. CSV y XLSX sirven para revisión y análisis, pero no para reconstruir por sí solos todas las relaciones. Consulte [Manual de uso](MANUAL-DE-USO.md#respaldos-y-exportaciones).
 
@@ -127,6 +133,8 @@ bash scripts/build.sh
 
 El script analiza la sintaxis Python con `scripts/check_syntax.py`, comprueba JavaScript con `node --check` cuando Node está disponible y usa `zipapp` para crear `dist/BetPlaycito-Nelson.pyz`, sin descargar dependencias. Además copia el lanzador, el icono SVG, la plantilla `.desktop`, la plantilla de configuración y el archivo de lectura a `dist/`.
 
+`scripts/build-deb.sh` crea el instalador de Ubuntu/Debian. El workflow `.github/workflows/release-native.yml` usa PyInstaller en ejecutores nativos para producir el ejecutable e instalador de Windows y dos imágenes DMG de macOS, una para Apple Silicon y otra para Intel.
+
 En desarrollo, una vez creado `config.local.json`, el punto de entrada puede iniciarse con:
 
 ```bash
@@ -141,7 +149,7 @@ Opciones operativas relevantes:
 - `--no-browser`: evita abrir el navegador automáticamente;
 - `--hash-password`: genera una derivación PBKDF2 interactiva y sale.
 
-También existen las variables de entorno `BETPLAYCITO_DATA_DIR`, `BETPLAYCITO_CONFIG`, `BETPLAYCITO_ADMIN_USER`, `BETPLAYCITO_ADMIN_PASSWORD_HASH`, `BETPLAYCITO_ADMIN_PASSWORD` y `BETPLAYCITO_SETUP_TOKEN`. No guarde valores sensibles en scripts versionados.
+También existen las variables de entorno `BETPLAYCITO_DATA_DIR`, `BETPLAYCITO_BACKUP_DIR`, `BETPLAYCITO_CONFIG`, `BETPLAYCITO_ADMIN_USER`, `BETPLAYCITO_ADMIN_PASSWORD_HASH`, `BETPLAYCITO_ADMIN_PASSWORD`, `BETPLAYCITO_SETUP_TOKEN` y `BETPLAYCITO_REQUIRE_SETUP`. No guarde valores sensibles en scripts versionados.
 
 No ejecute dos instancias contra el mismo archivo de datos salvo que la implementación lo controle explícitamente.
 

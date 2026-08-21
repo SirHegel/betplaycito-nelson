@@ -1,0 +1,13 @@
+Package: betplaycito-nelson
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: SirHegel <noreply@github.com>
+Depends: python3 (>= 3.10), xdg-utils
+Homepage: https://github.com/SirHegel/betplaycito-nelson
+Description: panel local de tendencias estadísticas de fútbol
+ BetPlaycito Nelson permite registrar, comparar y visualizar tendencias
+ históricas de fútbol en un panel que se ejecuta únicamente en el equipo
+ local. Conserva los datos del usuario en SQLite y no requiere paquetes de
+ Python de terceros.

@@ -1,0 +1,70 @@
+#!/bin/sh
+set -eu
+
+APP_BUNDLE="/opt/betplaycito-nelson/BetPlaycito-Nelson.pyz"
+APP_URL="http://127.0.0.1:8765/"
+
+if [ ! -r "${APP_BUNDLE}" ]; then
+    echo "BetPlaycito Nelson no está instalado correctamente: falta ${APP_BUNDLE}." >&2
+    exit 1
+fi
+
+if [ -z "${HOME:-}" ]; then
+    echo "No se pudo determinar la carpeta personal del usuario." >&2
+    exit 1
+fi
+
+case "${XDG_DATA_HOME:-}" in
+    /*) betplaycito_data_home=${XDG_DATA_HOME} ;;
+    *) betplaycito_data_home=${HOME}/.local/share ;;
+esac
+
+case "${XDG_CONFIG_HOME:-}" in
+    /*) betplaycito_config_home=${XDG_CONFIG_HOME} ;;
+    *) betplaycito_config_home=${HOME}/.config ;;
+esac
+
+betplaycito_data_dir=${betplaycito_data_home}/betplaycito-nelson
+betplaycito_config_dir=${betplaycito_config_home}/betplaycito-nelson
+betplaycito_backup_dir=${betplaycito_data_dir}/respaldos
+betplaycito_config_file=${betplaycito_config_dir}/config.local.json
+
+umask 077
+mkdir -p -- "${betplaycito_data_dir}" "${betplaycito_backup_dir}" "${betplaycito_config_dir}"
+chmod 700 -- "${betplaycito_data_dir}" "${betplaycito_backup_dir}" "${betplaycito_config_dir}" 2>/dev/null || true
+
+# Si ya existe una instancia local, el acceso del menú solo vuelve a abrirla.
+if /usr/bin/python3 -c '
+import json
+import sys
+import urllib.request
+
+try:
+    with urllib.request.urlopen(sys.argv[1] + "api/health", timeout=0.7) as response:
+        body = response.read(65537)
+    payload = json.loads(body.decode("utf-8")) if len(body) <= 65536 else {}
+    valid = (
+        response.status == 200
+        and payload.get("ok") is True
+        and isinstance(payload.get("data"), dict)
+        and payload["data"].get("status") == "ok"
+        and payload["data"].get("database") == "ok"
+        and isinstance(payload["data"].get("version"), str)
+    )
+except Exception:
+    valid = False
+raise SystemExit(0 if valid else 1)
+' "${APP_URL}" >/dev/null 2>&1; then
+    xdg-open "${APP_URL}" >/dev/null 2>&1 &
+    exit 0
+fi
+
+export BETPLAYCITO_DATA_DIR="${betplaycito_data_dir}"
+export BETPLAYCITO_BACKUP_DIR="${betplaycito_backup_dir}"
+export BETPLAYCITO_CONFIG="${betplaycito_config_file}"
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONNOUSERSITE=1
+
+exec /usr/bin/python3 "${APP_BUNDLE}" --port 8765 \
+    --data-dir "${betplaycito_data_dir}" \
+    --config "${betplaycito_config_file}"

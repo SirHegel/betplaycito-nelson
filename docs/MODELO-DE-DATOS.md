@@ -1,10 +1,11 @@
-# Modelo de datos
+# Modelo de datos · aplicación 1.1.0
 
 [Volver al README](../README.md) · [Ver arquitectura](ARQUITECTURA.md)
 
 ## Principios
 
 - SQLite es la fuente principal de verdad.
+- Los datos reales pertenecen al perfil local del usuario; no al ejecutable, al instalador ni al navegador.
 - Los contadores visibles se derivan de movimientos; no son cifras sueltas guardadas en el navegador.
 - Un movimiento confirmado es inmutable.
 - Una corrección se representa mediante un movimiento compensatorio.
@@ -13,6 +14,8 @@
 - Las claves de variables y opciones forman un catálogo cerrado validado por el servidor.
 
 ## Esquema físico v1
+
+La aplicación está en la versión **1.1.0**, mientras que el esquema SQLite continúa en la versión **1**. Son numeraciones distintas: una actualización visual o de empaquetado no obliga a cambiar la estructura de la base.
 
 | Tabla | Responsabilidad |
 | --- | --- |
@@ -27,13 +30,42 @@
 
 SQLite conserva además `PRAGMA user_version = 1`. Las claves foráneas se habilitan en cada conexión y la base usa WAL, `synchronous = FULL` y un tiempo de espera para escrituras concurrentes.
 
+## Ubicación y persistencia por plataforma
+
+Los paquetes nativos separan el programa de la información mutable. PyInstaller puede extraer temporalmente un ejecutable de un archivo, pero la base nunca se crea dentro de esa extracción ni dentro del `.exe`, `.app`, `.dmg` o `.deb`.
+
+| Ejecución | Base SQLite | Respaldos | Configuración opcional |
+| --- | --- | --- | --- |
+| Windows instalado o portable | `%LOCALAPPDATA%\BetPlaycito Nelson\betplaycito.db` | `%LOCALAPPDATA%\BetPlaycito Nelson\respaldos\` | `%APPDATA%\BetPlaycito Nelson\config.local.json` |
+| macOS Apple Silicon o Intel | `~/Library/Application Support/BetPlaycito Nelson/betplaycito.db` | `~/Library/Application Support/BetPlaycito Nelson/respaldos/` | `~/Library/Application Support/BetPlaycito Nelson/config.local.json` |
+| Ubuntu/Debian | `~/.local/share/betplaycito-nelson/betplaycito.db` | `~/.local/share/betplaycito-nelson/respaldos/` | `~/.config/betplaycito-nelson/config.local.json` |
+| Código fuente o zipapp | `datos/betplaycito.db` bajo la raíz del proyecto | `respaldos/` bajo la raíz | `config.local.json` bajo la raíz |
+
+En Linux, `XDG_DATA_HOME` y `XDG_CONFIG_HOME` reemplazan sus rutas predeterminadas cuando contienen rutas absolutas. Los argumentos `--data-dir` y `--config`, o sus variables de entorno equivalentes, también pueden reemplazar ubicaciones en una ejecución avanzada.
+
+Actualizar, reinstalar o desinstalar el programa no elimina deliberadamente los directorios del perfil. Cada cuenta de Windows, macOS o Linux obtiene una base independiente. Por tanto:
+
+- copiar solo el ejecutable portable a otro computador no transfiere estadísticas;
+- sustituir la versión 1.1.0 por una posterior no debe reiniciar los contadores;
+- para migrar datos se debe exportar un JSON restaurable o realizar una copia coherente con la aplicación cerrada;
+- una copia improvisada de `betplaycito.db` mientras WAL está activo puede quedar incompleta.
+
 ## Entidades
 
 ### Administrador
 
-La tabla `users` representa la cuenta local autorizada: `id`, `username`, `password_hash`, `active`, `created_at` y `updated_at`. `username` es único sin distinguir mayúsculas y minúsculas. La contraseña en texto plano no pertenece a la base de datos ni al repositorio.
+La tabla `users` representa la cuenta local autorizada: `id`, `username`, `password_hash`, `active`, `created_at` y `updated_at`. `username` es único sin distinguir mayúsculas y minúsculas. La contraseña en texto plano no pertenece a la base.
 
-La configuración privada de primer inicio vive en `config.local.json`, archivo ignorado por Git. Consulte [Seguridad](../SECURITY.md).
+Cuando una base nueva no contiene administradores y no existe una configuración que la reemplace, la versión 1.1.0 crea esta credencial pública predeterminada:
+
+```text
+Usuario: NelsonRuiz
+Contraseña: 1075271744
+```
+
+El backend incluye una derivación PBKDF2 de la contraseña predeterminada y escribe únicamente el hash en `users`; el texto `1075271744` no se inserta en SQLite. Al cambiar la contraseña desde **Seguridad**, se guarda una nueva derivación y la credencial pública deja de funcionar para esa base.
+
+Esta inicialización solo ocurre cuando no hay ningún administrador. Abrir una base existente, actualizar o reinstalar la aplicación no reemplaza el usuario ni restablece su contraseña. Antes de crear la primera base, una instalación avanzada puede proporcionar `admin_username` y `admin_password_hash` mediante `config.local.json` o variables de entorno. `BETPLAYCITO_REQUIRE_SETUP=1` conserva el flujo alternativo con código de configuración de una sola vez. Una vez creado el usuario, cambiar el archivo de configuración no modifica la fila existente. Consulte [Seguridad](../SECURITY.md).
 
 ### Equipo
 
@@ -78,6 +110,20 @@ El marcador siempre deriva Resultado, Goles 2.5, Ambos marcan y Local marcó. Es
 ### Sesión
 
 La tabla `sessions` guarda `user_id`, un SHA-256 del token aleatorio, creación, último uso, vencimiento y revocación. Nunca guarda la contraseña ni el token de cookie en claro. La duración vigente de una sesión es de 12 horas.
+
+## Separación entre la aplicación y la vista `file://`
+
+La aplicación instalada sirve la interfaz desde `http://127.0.0.1:8765/` y las escrituras pasan por la API local, sus validaciones y transacciones SQLite. El navegador no es la fuente de verdad.
+
+Si se abre `src/betplaycito/web/index.html` directamente, el protocolo es `file://` y el frontend entra en **Vista de demostración**. En ese modo:
+
+- carga un conjunto fijo de equipos, movimientos y porcentajes ficticios;
+- muestra un banner permanente de solo lectura;
+- no ejecuta solicitudes `fetch` hacia la API;
+- rechaza las acciones de escritura y no usa SQLite, `localStorage` ni otra persistencia;
+- no lee ni altera la base real del perfil del usuario.
+
+Los conteos de la demostración no deben incluirse en respaldos, pruebas de migración ni diagnósticos de pérdida de datos. Para consultar o modificar datos reales, se debe iniciar el ejecutable o la aplicación nativa.
 
 ## Catálogo de variables
 

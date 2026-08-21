@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.sirhegel.betplaycito-nelson</id>
+  <name>BetPlaycito Nelson</name>
+  <summary>Panel local de tendencias estadísticas de fútbol</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Registra resultados y variables de fútbol, compara equipos y presenta
+      sus tendencias históricas mediante porcentajes y gráficos circulares.
+    </p>
+    <p>
+      Los datos permanecen en el perfil local del usuario y se conservan al
+      actualizar o desinstalar la aplicación.
+    </p>
+  </description>
+  <launchable type="desktop-id">betplaycito-nelson.desktop</launchable>
+  <icon type="stock">betplaycito-nelson</icon>
+  <provides>
+    <binary>betplaycito-nelson</binary>
+  </provides>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://github.com/SirHegel/betplaycito-nelson</url>
+  <developer id="io.github.sirhegel">
+    <name>SirHegel</name>
+  </developer>
+  <releases>
+    <release version="@VERSION@" date="2026-08-21">
+      <description>
+        <p>Primera versión instalable de BetPlaycito Nelson.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

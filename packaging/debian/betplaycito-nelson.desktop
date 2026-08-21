@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BetPlaycito Nelson
+GenericName=Panel de estadísticas de fútbol
+Comment=Registra y compara tendencias históricas de fútbol
+Exec=betplaycito-nelson
+TryExec=betplaycito-nelson
+Icon=betplaycito-nelson
+Terminal=false
+Categories=Utility;
+Keywords=fútbol;estadísticas;dashboard;resultados;porcentajes;
+StartupNotify=false

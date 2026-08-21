@@ -7,15 +7,31 @@
     <meta name="theme-color" content="#071713">
     <meta name="description" content="Panel privado para registrar y analizar frecuencias de fútbol.">
     <title>BetPlaycito Nelson</title>
-    <link rel="stylesheet" href="/app.css">
+    <link rel="stylesheet" href="./app.css">
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
+
+    <div class="ambient-mesh" aria-hidden="true">
+      <span class="ambient-mesh__orb ambient-mesh__orb--one"></span>
+      <span class="ambient-mesh__orb ambient-mesh__orb--two"></span>
+      <span class="ambient-mesh__grid"></span>
+    </div>
+
+    <aside id="preview-banner" class="preview-banner" aria-label="Vista de demostración" hidden>
+      <span class="preview-banner__pulse" aria-hidden="true"></span>
+      <div>
+        <strong>Vista de demostración</strong>
+        <span>Estás viendo datos ficticios. Esta vista no se conecta ni guarda cambios.</span>
+      </div>
+      <span class="preview-banner__badge">SOLO LECTURA</span>
+    </aside>
 
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 
     <main id="auth-screen" class="auth-screen">
       <section class="auth-intro" aria-labelledby="auth-brand-title">
+        <div class="auth-intro__glow" aria-hidden="true"></div>
         <div class="brand-mark brand-mark--large" aria-hidden="true">
           <span>BN</span>
         </div>
@@ -29,6 +45,16 @@
           <span><i aria-hidden="true"></i> Comparación por equipos</span>
           <span><i aria-hidden="true"></i> Respaldos descargables</span>
         </div>
+        <div class="auth-preview" aria-hidden="true">
+          <div class="auth-preview__top">
+            <span><i></i> Rendimiento global</span>
+            <b>EN VIVO</b>
+          </div>
+          <div class="auth-preview__chart">
+            <span style="--h: 42%; --i: 0"></span><span style="--h: 68%; --i: 1"></span><span style="--h: 52%; --i: 2"></span><span style="--h: 82%; --i: 3"></span><span style="--h: 64%; --i: 4"></span><span style="--h: 91%; --i: 5"></span><span style="--h: 76%; --i: 6"></span>
+          </div>
+          <div class="auth-preview__footer"><strong>+18,4 %</strong><span>tendencia registrada</span></div>
+        </div>
       </section>
 
       <section class="auth-panel" aria-label="Acceso de administrador">
@@ -37,12 +63,13 @@
             <p class="eyebrow">Área privada</p>
             <h2 id="auth-title">Iniciar sesión</h2>
             <p id="auth-subtitle">Ingresa con tu cuenta de administrador.</p>
+            <span class="auth-card__status"><i aria-hidden="true"></i> Sistema local protegido</span>
           </div>
 
           <form id="login-form" class="form-stack" novalidate>
             <label class="field">
               <span>Usuario</span>
-              <input id="login-username" name="username" type="text" autocomplete="username" required maxlength="80">
+              <input id="login-username" name="username" type="text" autocomplete="username" value="NelsonRuiz" required maxlength="80">
             </label>
             <label class="field">
               <span>Contraseña</span>
@@ -152,12 +179,19 @@
         <main id="main-content" class="main-content" tabindex="-1">
           <section id="view-dashboard" class="view" data-view-panel="dashboard">
             <div class="dashboard-hero">
-              <div>
+              <div class="dashboard-hero__copy">
                 <p class="eyebrow">Frecuencias históricas</p>
                 <h2>Tu cancha de datos, <span id="welcome-name">administrador</span></h2>
                 <p>Registra observaciones, encuentra tendencias y compara equipos sin perder el rastro de ningún cambio.</p>
               </div>
               <button id="hero-match-button" class="button button--primary" type="button"><span aria-hidden="true">＋</span> Nuevo partido</button>
+              <div class="hero-pitch" aria-hidden="true">
+                <span class="hero-pitch__line"></span>
+                <span class="hero-pitch__center"></span>
+                <span class="hero-pitch__dot hero-pitch__dot--one"></span>
+                <span class="hero-pitch__dot hero-pitch__dot--two"></span>
+                <span class="hero-pitch__dot hero-pitch__dot--three"></span>
+              </div>
             </div>
 
             <div class="kpi-grid" aria-label="Indicadores principales">
@@ -381,6 +415,6 @@
       </form>
     </dialog>
 
-    <script src="/app.js" defer></script>
+    <script src="./app.js" defer></script>
   </body>
 </html>

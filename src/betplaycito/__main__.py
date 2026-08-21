@@ -26,12 +26,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        help="Directorio de datos; por defecto se usa datos/ junto al proyecto.",
+        help="Directorio de datos; por defecto se usa el almacenamiento de la aplicación.",
     )
     parser.add_argument(
         "--config",
         type=Path,
-        help="Archivo local de configuración; por defecto config.local.json.",
+        help="Archivo local de configuración; por defecto se usa la ubicación de la aplicación.",
     )
     parser.add_argument(
         "--no-browser",

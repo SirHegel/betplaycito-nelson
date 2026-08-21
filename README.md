@@ -1,118 +1,99 @@
 # BetPlaycito Nelson
 
-Dashboard local para registrar tendencias históricas de fútbol mediante sumadores y compararlas en gráficos circulares. La aplicación funciona sin servicios externos, conserva sus datos en SQLite y deja un historial de cada ajuste.
+Dashboard local y persistente para registrar tendencias históricas de fútbol, comparar equipos y visualizar porcentajes en gráficos circulares. Funciona en Windows, macOS y Ubuntu; no necesita una cuenta en la nube ni envía los datos a servicios externos.
 
 > [!IMPORTANT]
-> Los porcentajes son un resumen descriptivo de los registros ingresados. No garantizan resultados futuros, no sustituyen un análisis estadístico y no deben interpretarse como asesoría para apostar.
+> Los porcentajes resumen únicamente los registros ingresados. No garantizan resultados futuros ni constituyen asesoría de apuestas.
+
+## Descargar e instalar
+
+La versión más reciente está en [GitHub Releases](https://github.com/SirHegel/betplaycito-nelson/releases/latest).
+
+| Sistema | Archivo recomendado | Uso |
+| --- | --- | --- |
+| Windows 10/11 x64 | `BetPlaycito-Nelson-*-Windows-x64-Setup.exe` | Abrir, aceptar el permiso de instalación y seguir el asistente. |
+| Windows x64 portable | `BetPlaycito-Nelson-*-Windows-x64-portable.exe` | Un solo archivo; doble clic sin instalar. |
+| Mac con Apple Silicon | `BetPlaycito-Nelson-*-macOS-arm64.dmg` | Abrir la imagen y arrastrar la app a Aplicaciones. |
+| Mac Intel | `BetPlaycito-Nelson-*-macOS-x86_64.dmg` | Abrir la imagen y arrastrar la app a Aplicaciones. |
+| Ubuntu/Debian | `betplaycito-nelson_*_all.deb` | Abrir con el instalador de software o instalar con `apt`. |
+
+Los binarios publicados automáticamente todavía no están firmados con certificados comerciales. Windows o macOS pueden mostrar una advertencia de editor/desarrollador desconocido la primera vez; revise que la descarga provenga de este repositorio antes de permitir su apertura.
+
+## Acceso inicial
+
+Todas las instalaciones nuevas crean automáticamente la misma cuenta solicitada:
+
+```text
+Usuario: NelsonRuiz
+Contraseña: 1075271744
+```
+
+El usuario ya aparece escrito en la pantalla de acceso. La contraseña se valida localmente mediante PBKDF2 y no se guarda en texto plano en la base. Puede cambiarla después en **Seguridad**. Como esta credencial es pública, conviene cambiarla si otras personas pueden usar la misma cuenta del computador.
 
 ## Funciones principales
 
-- Acceso local con una cuenta administradora.
-- Contexto global y equipos opcionales, sin exigir rival ni un partido detallado.
 - Sumadores `+` y `−`, además de carga por cantidad para lotes grandes.
-- Registro detallado de partido opcional; el sistema deriva automáticamente las variables compatibles.
-- Seis grupos de variables:
-  - resultado: local, empate o visitante;
-  - total de goles: más o menos de 2.5;
-  - ambos equipos marcan: Gol-Gol o No Gol;
-  - tiros de esquina: más o menos de 9.5;
-  - tiros al arco: más o menos de 9.5;
-  - el local marcó o no marcó.
-- Porcentajes, cantidades y tamaño de muestra en gráficos tipo dona.
-- Explicación de la opción seleccionada y su diferencia frente a la alternativa más fuerte.
-- Guardado inmediato y un historial de movimientos que no se reescribe.
-- Respaldo y exportación de datos en los formatos ofrecidos por la aplicación.
+- Contexto global o por equipos, sin exigir rival ni partido detallado.
+- Comparación agregada entre varios equipos.
+- Registro opcional de partidos con derivación automática de variables.
+- Seis grupos de análisis: resultado; goles 2.5; Gol-Gol; marcador local; córners 9.5; y tiros al arco 9.5.
+- Cantidad, porcentaje y tamaño de muestra en gráficos tipo dona.
+- Explicación automática de la opción seleccionada frente a su alternativa.
+- Historial inmutable: una corrección agrega un movimiento inverso, no borra el original.
+- Copias SQLite automáticas y exportaciones JSON, CSV y XLSX.
+- Diseño adaptable con transiciones, navegación de escritorio y móvil.
 
-## Requisitos
+## Persistencia
 
-- Linux con Python 3.11 o posterior.
-- Un navegador web moderno.
-- No se requieren paquetes de Python de terceros para ejecutar la aplicación.
+SQLite es la fuente principal de verdad. Cada cambio confirmado se guarda inmediatamente y permanece disponible al cerrar, actualizar o reinstalar la aplicación. Las ubicaciones predeterminadas son:
 
-## Configuración privada
+| Sistema | Datos y respaldos |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%\BetPlaycito Nelson` |
+| macOS | `~/Library/Application Support/BetPlaycito Nelson` |
+| Ubuntu/Debian | `~/.local/share/betplaycito-nelson` |
+| Código fuente/zipapp | `datos/` y `respaldos/` junto al proyecto |
 
-El repositorio público no incluye credenciales. Antes del primer inicio, copie la plantilla y defina una cuenta propia:
+Desinstalar conserva deliberadamente los datos del usuario. Además, descargue periódicamente un respaldo JSON desde la aplicación y guárdelo en otra unidad.
 
-```bash
-cp config.example.json config.local.json
-```
+## Vista previa del diseño
 
-La plantilla admite una contraseña inicial en texto plano:
+Puede abrir [`src/betplaycito/web/index.html`](src/betplaycito/web/index.html) directamente para revisar el diseño con datos ficticios. Esa modalidad se identifica como **Vista de demostración**, es de solo lectura y no guarda cambios. El aplicativo real debe abrirse desde su instalador o ejecutable.
 
-```json
-{
-  "admin_username": "SU_USUARIO_LOCAL",
-  "admin_password": "UNA_CONTRASENA_LARGA_Y_UNICA"
-}
-```
+## Ejecutar desde el código fuente
 
-`config.local.json` está excluido por [`.gitignore`](.gitignore). No lo agregue al repositorio, no lo adjunte a reportes de errores y no reutilice una contraseña importante.
-
-Es más seguro generar una derivación PBKDF2 de forma interactiva y guardar `admin_password_hash` en vez de `admin_password`:
+Requiere Python 3.10 o posterior y un navegador moderno. La aplicación en ejecución usa únicamente la biblioteca estándar de Python.
 
 ```bash
-PYTHONPATH=src python3 -m betplaycito --hash-password
-chmod 600 config.local.json
+PYTHONPATH=src python3 -m betplaycito
 ```
 
-El comando no muestra la contraseña mientras se escribe. Pegue únicamente la cadena generada en su configuración:
-
-```json
-{
-  "admin_username": "SU_USUARIO_LOCAL",
-  "admin_password_hash": "PBKDF2_GENERADO_LOCALMENTE"
-}
-```
-
-Como alternativa, si inicia sin configuración y aún no existe un administrador, la consola muestra un código aleatorio de configuración de una sola vez. La pantalla inicial permite usarlo para crear la cuenta. No comparta ese código.
-
-## Construcción
-
-Desde la raíz del proyecto:
+Para crear el zipapp y el paquete de Ubuntu:
 
 ```bash
 bash scripts/build.sh
+bash scripts/build-deb.sh
 ```
 
-El script valida los módulos y crea:
+La configuración predeterminada se puede reemplazar con `config.local.json`, variables de entorno o las opciones `--config` y `--data-dir`. Consulte [Arquitectura](docs/ARQUITECTURA.md#ejecución-y-empaquetado).
 
-- `dist/BetPlaycito-Nelson.pyz`;
-- `dist/Iniciar BetPlaycito Nelson.sh`;
-- `dist/betplaycito-nelson.svg`;
-- `dist/BetPlaycito Nelson.desktop.example`;
-- `dist/config.example.json`;
-- `dist/LEEME.md`.
+## Construcciones nativas
 
-Copie o cree su `config.local.json` en la misma carpeta que el archivo `.pyz`, y abra `Iniciar BetPlaycito Nelson.sh`. El servicio se limita al equipo local y abre la interfaz en el navegador.
+El workflow `release-native.yml` construye cada artefacto en su sistema operativo de destino: Windows x64, macOS Apple Silicon, macOS Intel y Ubuntu. Esto evita presentar un archivo de Linux como si pudiera ejecutarse en Windows o Mac. Las instrucciones técnicas están en [Publicaciones nativas](packaging/NATIVE-RELEASES.md).
 
-Para ejecutar desde el código fuente, consulte el flujo vigente en [Arquitectura](docs/ARQUITECTURA.md#ejecución-y-empaquetado).
+## Alcance local
 
-## Datos y copias de seguridad
+El servidor escucha únicamente en `127.0.0.1`; no debe exponerse por túneles, reenvío de puertos ni un proxy público. Esta edición no se publica en Vercel porque su SQLite local necesita almacenamiento persistente. Una versión web requeriría autenticación para Internet y una base administrada distinta.
 
-SQLite es la fuente principal de verdad. De forma predeterminada se guarda en `datos/betplaycito.db`. Antes de abrir una base existente, el aplicativo crea una copia fechada en `respaldos/`. También permite crear una copia SQLite a petición, descargar un respaldo JSON restaurable y exportar CSV o XLSX.
-
-Los archivos de hoja de cálculo son exportaciones, no deben editarse esperando que la base cambie automáticamente.
-
-- No borre la base de datos ni las carpetas `datos/` y `respaldos/`.
-- Guarde copias de respaldo en otra unidad de forma periódica.
-- Revise que un respaldo sea legible antes de depender de él.
-- Una resta corrige el total mediante un nuevo movimiento; no elimina el movimiento anterior.
-
-Consulte [Modelo de datos](docs/MODELO-DE-DATOS.md) para conocer las reglas de integridad y [Manual de uso](docs/MANUAL-DE-USO.md#respaldos-y-exportaciones) para el procedimiento operativo.
-
-## Por qué no se publica directamente en Vercel
-
-Esta versión usa una base SQLite local. El sistema de archivos de una función de Vercel es efímero y no ofrece la persistencia que necesita la aplicación. Una versión alojada requeriría, como mínimo, autenticación preparada para Internet, HTTPS y migrar los datos a una base administrada como PostgreSQL.
-
-No exponga este servidor local mediante reenvío de puertos, túneles o un proxy público. Consulte [Seguridad](SECURITY.md).
+Consulte [Seguridad](SECURITY.md), [Modelo de datos](docs/MODELO-DE-DATOS.md) y [Manual de uso](docs/MANUAL-DE-USO.md) para más detalles.
 
 ## Documentación
 
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Modelo de datos](docs/MODELO-DE-DATOS.md)
 - [Manual de uso](docs/MANUAL-DE-USO.md)
-- [Política y recomendaciones de seguridad](SECURITY.md)
-- [Guía para contribuir](CONTRIBUTING.md)
+- [Seguridad](SECURITY.md)
+- [Contribuir](CONTRIBUTING.md)
 
 ## Licencia
 

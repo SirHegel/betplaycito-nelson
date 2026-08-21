@@ -6,7 +6,7 @@ Gracias por ayudar a mejorar BetPlaycito Nelson. Mantenga los cambios pequeños,
 
 ## Preparar el entorno
 
-Requisitos: Git, Bash y Python 3.11 o posterior.
+Requisitos: Git, Bash y Python 3.10 o posterior.
 
 ```bash
 git clone URL_DEL_REPOSITORIO

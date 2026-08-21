@@ -1,0 +1,26 @@
+BetPlaycito Nelson para Debian y Ubuntu
+========================================
+
+La aplicación se instala en /opt/betplaycito-nelson y aparece en el menú de
+aplicaciones como «BetPlaycito Nelson». El lanzador abre un servidor solo en
+127.0.0.1 y después muestra el panel en el navegador predeterminado.
+
+Los datos no se guardan dentro del paquete. Cada usuario conserva su información
+en las rutas XDG de su propio perfil:
+
+  ~/.local/share/betplaycito-nelson/betplaycito.db
+  ~/.local/share/betplaycito-nelson/respaldos/
+  ~/.config/betplaycito-nelson/config.local.json (opcional)
+
+Si XDG_DATA_HOME o XDG_CONFIG_HOME están definidos con rutas absolutas, se usan
+en lugar de los valores anteriores. Desinstalar o actualizar el paquete no borra
+estas carpetas ni la información del usuario.
+
+La cuenta pública predeterminada de una instalación nueva es:
+
+  Usuario: NelsonRuiz
+  Contraseña: 1075271744
+
+En un computador compartido, cambie esa contraseña desde el módulo «Seguridad»
+después del primer ingreso. No exponga el servidor mediante reenvío de puertos,
+túneles ni un proxy público.

@@ -1,9 +1,8 @@
 """Servidor HTTP local, API JSON y persistencia SQLite de BetPlaycito.
 
-El módulo usa exclusivamente la biblioteca estándar.  El servicio escucha siempre
-en ``127.0.0.1``; las credenciales iniciales se leen de configuración local o se
-crean mediante un setup de una sola vez. Nunca existen credenciales predeterminadas
-en el código fuente.
+El módulo usa exclusivamente la biblioteca estándar. El servicio escucha siempre
+en ``127.0.0.1`` y crea una cuenta administradora predeterminada en las bases nuevas,
+a menos que la instalación proporcione una configuración local diferente.
 """
 
 from __future__ import annotations
@@ -25,6 +24,7 @@ import sys
 import threading
 import time
 import urllib.parse
+import urllib.request
 import webbrowser
 import zipfile
 from contextlib import contextmanager
@@ -51,6 +51,14 @@ MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_RESTORE_BYTES = 50 * 1024 * 1024
 SCHEMA_VERSION = 1
 MAX_SQLITE_ID = 9_223_372_036_854_775_807
+
+# Credencial pública de arranque solicitada para todas las instalaciones.
+# Solo se conserva la derivación PBKDF2; la contraseña nunca se almacena en claro.
+DEFAULT_ADMIN_USERNAME = "NelsonRuiz"
+DEFAULT_ADMIN_PASSWORD_HASH = (
+    "pbkdf2_sha256$600000$3jqMgsiHrtYPYxrhiOhSs1cZfFA5REJS$"
+    "mvDfQtNDD6wxQBpr7ZBTi-KQuTP3PSLr6Ep4Sq9fVKk"
+)
 
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,64}$")
 BACKUP_NAME_RE = re.compile(r"^betplaycito-\d{8}T\d{6}(?:\d{6})?Z\.db$")
@@ -289,6 +297,32 @@ def default_project_root() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[2]
+
+
+def default_user_storage(root: Path) -> tuple[Path, Path, Path]:
+    """Devuelve datos, configuración y respaldos apropiados para la plataforma.
+
+    El código fuente y el zipapp portátil conservan sus carpetas junto al proyecto.
+    Los binarios PyInstaller usan ubicaciones persistentes y escribibles por usuario.
+    """
+
+    if not getattr(sys, "frozen", False):
+        return root / "datos", root / "config.local.json", root / "respaldos"
+    home = Path.home()
+    if os.name == "nt":
+        data_base = Path(os.environ.get("LOCALAPPDATA") or home / "AppData" / "Local")
+        config_base = Path(os.environ.get("APPDATA") or home / "AppData" / "Roaming")
+        data_dir = data_base / "BetPlaycito Nelson"
+        config_path = config_base / "BetPlaycito Nelson" / "config.local.json"
+    elif sys.platform == "darwin":
+        data_dir = home / "Library" / "Application Support" / "BetPlaycito Nelson"
+        config_path = data_dir / "config.local.json"
+    else:
+        data_base = Path(os.environ.get("XDG_DATA_HOME") or home / ".local" / "share")
+        config_base = Path(os.environ.get("XDG_CONFIG_HOME") or home / ".config")
+        data_dir = data_base / "betplaycito-nelson"
+        config_path = config_base / "betplaycito-nelson" / "config.local.json"
+    return data_dir, config_path, data_dir / "respaldos"
 
 
 def _load_config(path: Path) -> dict[str, Any]:
@@ -552,14 +586,17 @@ def derive_match_categories(
 class BetPlaycitoApp:
     def __init__(self, *, data_dir: Path | None = None, config_path: Path | None = None) -> None:
         root = default_project_root()
+        default_data, default_config, default_backups = default_user_storage(root)
         configured_data = os.environ.get("BETPLAYCITO_DATA_DIR")
-        self.data_dir = Path(data_dir or configured_data or root / "datos").expanduser().resolve()
+        self.data_dir = Path(data_dir or configured_data or default_data).expanduser().resolve()
         configured_file = os.environ.get("BETPLAYCITO_CONFIG")
         self.config_path = Path(
-            config_path or configured_file or root / "config.local.json"
+            config_path or configured_file or default_config
         ).expanduser().resolve()
+        configured_backups = os.environ.get("BETPLAYCITO_BACKUP_DIR")
+        backup_dir = Path(configured_backups or default_backups).expanduser().resolve()
         self.database = Database(
-            self.data_dir / "betplaycito.db", backup_dir=root / "respaldos"
+            self.data_dir / "betplaycito.db", backup_dir=backup_dir
         )
         if self.database.path.is_file() and self.database.path.stat().st_size > 0:
             automatic = self.database.backup()
@@ -590,6 +627,15 @@ class BetPlaycitoApp:
         )
         plaintext = os.environ.get("BETPLAYCITO_ADMIN_PASSWORD", config.get("admin_password"))
         supplied = any(value is not None for value in (username, encoded, plaintext))
+        require_setup = os.environ.get("BETPLAYCITO_REQUIRE_SETUP", "").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+        if not supplied and not require_setup:
+            username = DEFAULT_ADMIN_USERNAME
+            encoded = DEFAULT_ADMIN_PASSWORD_HASH
+            supplied = True
         if supplied:
             if not isinstance(username, str) or not USERNAME_RE.fullmatch(username):
                 raise RuntimeError(
@@ -612,7 +658,7 @@ class BetPlaycitoApp:
             else:
                 raise RuntimeError("Falta admin_password_hash en la configuración local.")
             self._create_initial_user(username, encoded)
-            LOGGER.info("Administrador inicial creado desde configuración local segura.")
+            LOGGER.info("Administrador inicial creado desde configuración segura.")
             return
         self.setup_token = os.environ.get("BETPLAYCITO_SETUP_TOKEN") or secrets.token_urlsafe(32)
         LOGGER.warning(
@@ -2583,6 +2629,26 @@ class BetPlaycitoHandler(BaseHTTPRequestHandler):
         )
 
 
+def _existing_server_is_ready(base_url: str) -> bool:
+    try:
+        request = urllib.request.Request(
+            f"{base_url}api/health", headers={"Accept": "application/json"}
+        )
+        with urllib.request.urlopen(request, timeout=1.5) as response:
+            payload = json.loads(response.read(64 * 1024).decode("utf-8"))
+            data = payload.get("data")
+            return (
+                response.status == 200
+                and payload.get("ok") is True
+                and isinstance(data, dict)
+                and data.get("status") == "ok"
+                and data.get("database") == "ok"
+                and isinstance(data.get("version"), str)
+            )
+    except (OSError, UnicodeError, ValueError):
+        return False
+
+
 def run_server(
     *,
     port: int = 8765,
@@ -2593,8 +2659,22 @@ def run_server(
     """Inicializa la aplicación y atiende exclusivamente en ``127.0.0.1``."""
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    requested_url = f"http://{HOST}:{port}/" if port else None
+    if requested_url and _existing_server_is_ready(requested_url):
+        LOGGER.info("BetPlaycito ya estaba abierto en %s", requested_url)
+        if open_browser:
+            webbrowser.open(requested_url, new=1)
+        return 0
     app = BetPlaycitoApp(data_dir=data_dir, config_path=config_path)
-    server = BetPlaycitoHTTPServer((HOST, port), app)
+    try:
+        server = BetPlaycitoHTTPServer((HOST, port), app)
+    except OSError:
+        if requested_url and _existing_server_is_ready(requested_url):
+            LOGGER.info("BetPlaycito ya estaba abierto en %s", requested_url)
+            if open_browser:
+                webbrowser.open(requested_url, new=1)
+            return 0
+        raise
     actual_port = int(server.server_address[1])
     url = f"http://{HOST}:{actual_port}/"
     LOGGER.info("BetPlaycito %s disponible en %s", __version__, url)

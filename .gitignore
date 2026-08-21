@@ -17,6 +17,8 @@ respaldos/*
 
 # Salidas de compilación
 dist/
+build-native/
+dist-native/
 *.pyz
 /Iniciar BetPlaycito Nelson.sh
 /BetPlaycito Nelson.desktop
