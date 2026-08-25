@@ -12,11 +12,19 @@ if [[ ! -f "${SOURCE_DIR}/betplaycito/__main__.py" ]]; then
 fi
 
 python3 "${SCRIPT_DIR}/check_syntax.py"
+python3 -m unittest discover -s "${PROJECT_DIR}/tests" -v
 if command -v node >/dev/null 2>&1; then
   node --check "${SOURCE_DIR}/betplaycito/web/app.js"
 fi
+
+STAGING_DIR="$(mktemp -d -t betplaycito-source.XXXXXXXX)"
+trap 'rm -rf -- "${STAGING_DIR}"' EXIT
+cp -a "${SOURCE_DIR}/." "${STAGING_DIR}/"
+find "${STAGING_DIR}" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+find "${STAGING_DIR}" -depth -type d -name '__pycache__' -empty -delete
+
 mkdir -p "${DIST_DIR}"
-python3 -m zipapp "${SOURCE_DIR}" \
+python3 -m zipapp "${STAGING_DIR}" \
   --main "betplaycito.__main__:main" \
   --python "/usr/bin/env python3" \
   --compress \

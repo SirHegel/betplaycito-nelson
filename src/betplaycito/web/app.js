@@ -29,6 +29,11 @@
     local: ["#35d9e6", "#ff7d6b"],
     corners: ["#a88bff", "#ffc857"],
     shots: ["#ff7d6b", "#35d9e6"],
+    totalShots: ["#afff6a", "#a995ff"],
+    targetRange: ["#58d5df", "#ff816d"],
+    cornersRange: ["#ffd16c", "#a995ff"],
+    cards: ["#ff816d", "#ffd16c"],
+    halves: ["#afff6a", "#58d5df", "#a995ff"],
     fallback: ["#b9f44a", "#35d9e6", "#a88bff", "#ff7d6b"],
   };
 
@@ -39,6 +44,11 @@
     local: "Indica si el equipo local logró marcar al menos un gol.",
     corners: "Más de 9.5 corresponde a 10 o más córners totales; menos, entre 0 y 9.",
     shots: "Más de 9.5 corresponde a 10 o más tiros al arco totales; menos, entre 0 y 9.",
+    totalShots: "+25,5 registra la condición de más de 25,5 remates; −26,5 registra la condición de menos de 26,5.",
+    targetRange: "+7,5 registra la condición de más de 7,5 tiros a puerta; −8,5 registra la condición de menos de 8,5.",
+    cornersRange: "+9,5 registra la condición de más de 9,5 tiros de esquina; −10,5 registra la condición de menos de 10,5.",
+    cards: "+4 registra la condición de más de 4 tarjetas; −5 registra la condición de menos de 5.",
+    halves: "+0,5 1M significa que la primera mitad tuvo al menos un gol más que la segunda; +0,5 2M, que la segunda tuvo al menos uno más; == significa que ambas tuvieron la misma cantidad.",
   };
 
   const PREVIEW_GROUPS = [
@@ -48,6 +58,11 @@
     { key: "local_goal", label: "Marcador local", categories: ["local_scored", "local_blank"] },
     { key: "corners", label: "Tiros de esquina 9.5", categories: ["corners_over95", "corners_under95"] },
     { key: "shots_on_target", label: "Tiros al arco 9.5", categories: ["shots_over95", "shots_under95"] },
+    { key: "total_shots_range", label: "Remates totales", categories: ["total_shots_over255", "total_shots_under265"] },
+    { key: "shots_on_target_range", label: "Tiros a puerta", categories: ["shots_on_target_over75", "shots_on_target_under85"] },
+    { key: "corners_range", label: "Tiros de esquina", categories: ["corners_plus95", "corners_minus105"] },
+    { key: "cards_range", label: "Tarjetas", categories: ["cards_plus4", "cards_minus5"] },
+    { key: "half_goals", label: "Goles por mitades", categories: ["first_half_more_goals", "second_half_more_goals", "halves_equal_goals"] },
   ];
 
   const PREVIEW_LABELS = {
@@ -64,38 +79,27 @@
     corners_under95: "Menos de 9.5 tiros de esquina",
     shots_over95: "Más de 9.5 tiros al arco",
     shots_under95: "Menos de 9.5 tiros al arco",
+    total_shots_over255: "+25,5 remates",
+    total_shots_under265: "−26,5 remates",
+    shots_on_target_over75: "+7,5 tiros a puerta",
+    shots_on_target_under85: "−8,5 tiros a puerta",
+    corners_plus95: "+9,5 tiros de esquina",
+    corners_minus105: "−10,5 tiros de esquina",
+    cards_plus4: "+4 tarjetas",
+    cards_minus5: "−5 tarjetas",
+    first_half_more_goals: "+0,5 · 1M",
+    second_half_more_goals: "+0,5 · 2M",
+    halves_equal_goals: "== · mismas cantidades",
   };
 
-  const PREVIEW_TEAMS = [
-    { id: 1, name: "Atlético Nacional", archived: false },
-    { id: 2, name: "Millonarios", archived: false },
-    { id: 3, name: "Junior FC", archived: false },
-    { id: 4, name: "América de Cali", archived: false },
-    { id: 5, name: "Deportes Tolima", archived: false },
-  ];
-
-  const PREVIEW_TEAM_COUNTS = {
-    1: [62, 21, 31, 67, 47, 59, 55, 74, 40, 61, 53, 58, 56],
-    2: [55, 28, 35, 58, 60, 64, 54, 71, 47, 57, 61, 52, 66],
-    3: [48, 25, 39, 64, 48, 55, 57, 69, 43, 63, 49, 60, 52],
-    4: [51, 31, 34, 61, 55, 67, 49, 73, 43, 56, 60, 55, 61],
-    5: [46, 30, 32, 53, 55, 50, 58, 64, 44, 59, 49, 51, 57],
-  };
-
-  const PREVIEW_HISTORY = [
-    { type: "match", created_at: "2026-08-20T23:42:00Z", home_team_name: "Atlético Nacional", away_team_name: "Millonarios", home_goals: 2, away_goals: 1, corners_home: 6, corners_away: 5, shots_on_target_home: 7, shots_on_target_away: 4, note: "Liga · fecha 8", categories: ["home_win", "over25", "btts_yes"] },
-    { type: "adjustment", created_at: "2026-08-20T17:18:00Z", variable: "btts_yes", variable_label: "Gol / Gol", team_name: "Junior FC", delta: 12, note: "Consolidado últimas jornadas" },
-    { type: "match", created_at: "2026-08-19T21:06:00Z", home_team_name: "América de Cali", away_team_name: "Deportes Tolima", home_goals: 1, away_goals: 1, corners_home: 4, corners_away: 4, shots_on_target_home: 5, shots_on_target_away: 3, note: "Liga · fecha 7", categories: ["draw", "under25", "btts_yes"] },
-    { type: "adjustment", created_at: "2026-08-19T14:25:00Z", variable: "corners_over95", variable_label: "Más de 9.5 tiros de esquina", team_name: "Millonarios", delta: 8, note: "Carga histórica verificada" },
-    { type: "adjustment", created_at: "2026-08-18T19:32:00Z", variable: "home_win", variable_label: "Ganó el local", team_name: "Atlético Nacional", delta: 10, note: "Muestra de demostración" },
-    { type: "match", created_at: "2026-08-18T01:12:00Z", home_team_name: "Junior FC", away_team_name: "América de Cali", home_goals: 3, away_goals: 2, corners_home: 8, corners_away: 4, shots_on_target_home: 9, shots_on_target_away: 5, note: "Liga · fecha 6", categories: ["home_win", "over25", "btts_yes"] },
-  ];
+  const PREVIEW_TEAMS = [];
+  const PREVIEW_HISTORY = [];
 
   const PREVIEW_STATE = {
     authenticated: true,
     setup_required: false,
-    user: { id: 1, username: "Nelson Ruiz" },
-    features: { teams: true, matches: true, backups: true, restore: true, xlsx: true, shutdown: false, persistent_sqlite: false },
+    user: { id: 1, username: "Administrador" },
+    features: { teams: false, matches: false, backups: false, restore: false, xlsx: false, shutdown: false, persistent_sqlite: false },
     variables: PREVIEW_GROUPS.flatMap((group) => group.categories.map((key) => ({
       key,
       group: group.key,
@@ -103,7 +107,7 @@
       alternatives: group.categories.filter((candidate) => candidate !== key),
     }))),
     groups: PREVIEW_GROUPS,
-    version: "demo",
+    version: "vista-vacía",
   };
 
   const state = {
@@ -136,43 +140,30 @@
   }
 
   function previewDashboard(teamIds = []) {
-    const ids = teamIds.length ? teamIds : PREVIEW_TEAMS.map((team) => team.id);
-    const flatCounts = Array.from({ length: 13 }, (_, index) => ids.reduce(
-      (sum, id) => sum + (PREVIEW_TEAM_COUNTS[id]?.[index] || 0),
-      0
-    ));
-    let cursor = 0;
     const groups = PREVIEW_GROUPS.map((definition) => {
-      const counts = definition.categories.map(() => flatCounts[cursor++]);
-      const total = counts.reduce((sum, count) => sum + count, 0);
       return {
         key: definition.key,
         label: definition.label,
-        total,
-        categories: definition.categories.map((key, index) => {
-          const count = counts[index];
-          const manualCount = Math.round(count * 0.72);
-          return {
-            key,
-            label: PREVIEW_LABELS[key],
-            count,
-            percentage: total ? (count / total) * 100 : 0,
-            manual_count: manualCount,
-            match_count: count - manualCount,
-            decrementable_count: manualCount,
-            can_decrement: manualCount > 0,
-          };
-        }),
+        total: 0,
+        categories: definition.categories.map((key) => ({
+          key,
+          label: PREVIEW_LABELS[key],
+          count: 0,
+          percentage: 0,
+          manual_count: 0,
+          match_count: 0,
+          decrementable_count: 0,
+          can_decrement: false,
+        })),
       };
     });
-    const observations = groups.reduce((sum, group) => sum + group.total, 0);
     return {
       groups,
       totals: {
-        observations,
-        adjustments: ids.length * 94 + 17,
-        adjustment_units: Math.round(observations * 0.72),
-        matches: ids.length * 58 + 23,
+        observations: 0,
+        adjustments: 0,
+        adjustment_units: 0,
+        matches: 0,
       },
     };
   }
@@ -182,7 +173,7 @@
     const method = String(options.method || "GET").toUpperCase();
     if (method !== "GET") {
       throw new ApiError(
-        "Esta es una vista de demostración: puedes explorarla, pero los cambios solo se guardan desde la aplicación instalada.",
+        "Esta vista está vacía y es de solo lectura. Abre la aplicación instalada para guardar tus datos.",
         0,
         "preview_read_only"
       );
@@ -195,7 +186,7 @@
       const ids = (url.searchParams.get("team_ids") || "")
         .split(",")
         .map(Number)
-        .filter((value) => Number.isInteger(value) && PREVIEW_TEAM_COUNTS[value]);
+        .filter((value) => Number.isInteger(value) && PREVIEW_TEAMS.some((team) => team.id === value));
       return previewDashboard(ids);
     }
     if (url.pathname === "/api/history") {
@@ -207,7 +198,7 @@
         total_pages: 1,
       };
     }
-    throw new ApiError("Esta acción no está disponible en la vista de demostración.", 0, "preview_unavailable");
+    throw new ApiError("Esta acción no está disponible en la vista previa vacía.", 0, "preview_unavailable");
   }
 
   async function api(path, options = {}) {
@@ -393,14 +384,11 @@
       document.documentElement.dataset.preview = "true";
       document.body.classList.add("is-preview");
       $("#preview-banner").hidden = false;
-      state.selectedTeamIds = new Set([1, 2]);
-      state.entryTeamId = "1";
       await hydrateApp(structuredClone(PREVIEW_STATE));
-      await loadComparison();
-      setSaveStatus("saved", "Vista demo");
+      setSaveStatus("saved", "Solo lectura");
       window.setTimeout(() => showToast(
-        "Demo lista para explorar",
-        "Los números son ficticios y ninguna acción se guarda en este modo."
+        "Vista vacía",
+        "No hay equipos ni estadísticas precargadas. Abre el ejecutable para guardar tus datos."
       ), 650);
       return;
     }
@@ -523,7 +511,7 @@
 
   async function handleLogout() {
     if (PREVIEW_MODE) {
-      showToast("Vista de demostración", "El cierre de sesión está disponible en la aplicación instalada.");
+      showToast("Vista previa vacía", "El cierre de sesión está disponible en la aplicación instalada.");
       return;
     }
     try {
@@ -715,6 +703,11 @@
 
   function groupKind(group) {
     const key = `${group.key || ""} ${(group.categories || []).map((item) => item.key).join(" ")}`.toLowerCase();
+    if (key.includes("total_shots_range")) return "totalShots";
+    if (key.includes("shots_on_target_range")) return "targetRange";
+    if (key.includes("corners_range")) return "cornersRange";
+    if (key.includes("cards_range")) return "cards";
+    if (key.includes("half_goals")) return "halves";
     if (key.includes("home_win") || key.includes("away_win") || key.includes("result")) return "result";
     if (key.includes("over25") || key.includes("under25") || key.includes("goal")) {
       if (key.includes("local_scored") || key.includes("local_blank")) return "local";
@@ -1189,7 +1182,7 @@
 
   async function downloadExport(format, sourceButton) {
     if (PREVIEW_MODE) {
-      showToast("Descarga desactivada en la demo", "Instala el aplicativo para exportar tus datos reales.");
+      showToast("Descarga desactivada", "Abre el aplicativo para exportar tus datos reales.");
       return;
     }
     setBusy(sourceButton, true, "Preparando…");
@@ -1242,7 +1235,7 @@
   async function handleRestoreFile(event) {
     if (PREVIEW_MODE) {
       event.target.value = "";
-      showToast("Restauración desactivada en la demo", "Esta vista no lee ni modifica respaldos.");
+      showToast("Restauración desactivada", "Esta vista previa no lee ni modifica respaldos.");
       return;
     }
     const file = event.target.files?.[0];

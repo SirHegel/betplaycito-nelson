@@ -63,9 +63,9 @@ Una base nueva crea automáticamente la cuenta pública de arranque `NelsonRuiz`
 
 ## Variables de dominio
 
-La versión actual contempla seis grupos:
+La versión actual contempla once grupos:
 
-| Grupo | Opciones excluyentes dentro del gráfico | Interpretación |
+| Grupo | Opciones | Interpretación |
 | --- | --- | --- |
 | Resultado | Local / Empate / Visitante | Resultado final agregado |
 | Goles 2.5 | Más / Menos | 3 o más frente a 0–2 goles totales |
@@ -73,8 +73,15 @@ La versión actual contempla seis grupos:
 | Esquinas 9.5 | Más / Menos | 10 o más frente a 0–9 tiros de esquina totales |
 | Tiros al arco 9.5 | Más / Menos | 10 o más frente a 0–9 tiros al arco totales |
 | Local marcó | Sí / No | El equipo local anotó al menos un gol |
+| Remates totales | +25,5 / −26,5 | Indicadores manuales separados para los dos umbrales solicitados |
+| Tiros a puerta | +7,5 / −8,5 | Indicadores manuales separados para los dos umbrales solicitados |
+| Tiros de esquina | +9,5 / −10,5 | Indicadores manuales separados para los dos umbrales solicitados |
+| Tarjetas | +4 / −5 | Indicadores manuales separados para los dos umbrales solicitados |
+| Goles por mitades | +0,5 1M / +0,5 2M / == | Más goles en primera, más goles en segunda o cantidades iguales |
 
 El denominador se calcula por grupo de variable y por contexto. Debido a que el usuario alimenta sumadores independientes, los tamaños de muestra de dos gráficos pueden ser diferentes; esto es válido y debe hacerse visible.
+
+Los cuatro pares de umbrales nuevos conservan literalmente las líneas solicitadas y se cargan manualmente. Como algunas líneas adyacentes se solapan en un total entero, el servidor no intenta deducirlas desde un mismo partido. El grupo de mitades sí representa tres resultados excluyentes de la comparación entre goles de la primera y la segunda mitad.
 
 ## Flujo de un ajuste manual
 
@@ -133,7 +140,7 @@ bash scripts/build.sh
 
 El script analiza la sintaxis Python con `scripts/check_syntax.py`, comprueba JavaScript con `node --check` cuando Node está disponible y usa `zipapp` para crear `dist/BetPlaycito-Nelson.pyz`, sin descargar dependencias. Además copia el lanzador, el icono SVG, la plantilla `.desktop`, la plantilla de configuración y el archivo de lectura a `dist/`.
 
-`scripts/build-deb.sh` crea el instalador de Ubuntu/Debian. El workflow `.github/workflows/release-native.yml` usa PyInstaller en ejecutores nativos para producir el ejecutable e instalador de Windows y dos imágenes DMG de macOS, una para Apple Silicon y otra para Intel.
+`scripts/build-deb.sh` crea el instalador de Ubuntu/Debian y `scripts/build-linux-native.sh` crea un ejecutable Linux autónomo con PyInstaller. El workflow `.github/workflows/release-native.yml` usa ejecutores nativos para producir el ejecutable e instalador de Windows, dos imágenes DMG de macOS —Apple Silicon e Intel—, el binario Linux x86_64 y el paquete `.deb`.
 
 En desarrollo, una vez creado `config.local.json`, el punto de entrada puede iniciarse con:
 

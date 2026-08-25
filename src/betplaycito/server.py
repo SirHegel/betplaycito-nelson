@@ -95,6 +95,35 @@ VARIABLE_GROUPS: tuple[dict[str, Any], ...] = (
         "label": "Tiros al arco 9.5",
         "categories": ("shots_over95", "shots_under95"),
     },
+    {
+        "key": "total_shots_range",
+        "label": "Remates totales",
+        "categories": ("total_shots_over255", "total_shots_under265"),
+    },
+    {
+        "key": "shots_on_target_range",
+        "label": "Tiros a puerta",
+        "categories": ("shots_on_target_over75", "shots_on_target_under85"),
+    },
+    {
+        "key": "corners_range",
+        "label": "Tiros de esquina",
+        "categories": ("corners_plus95", "corners_minus105"),
+    },
+    {
+        "key": "cards_range",
+        "label": "Tarjetas",
+        "categories": ("cards_plus4", "cards_minus5"),
+    },
+    {
+        "key": "half_goals",
+        "label": "Goles por mitades",
+        "categories": (
+            "first_half_more_goals",
+            "second_half_more_goals",
+            "halves_equal_goals",
+        ),
+    },
 )
 
 _VARIABLE_LABELS = {
@@ -111,6 +140,17 @@ _VARIABLE_LABELS = {
     "corners_under95": "Menos de 9.5 tiros de esquina",
     "shots_over95": "Más de 9.5 tiros al arco",
     "shots_under95": "Menos de 9.5 tiros al arco",
+    "total_shots_over255": "+25,5 remates",
+    "total_shots_under265": "−26,5 remates",
+    "shots_on_target_over75": "+7,5 tiros a puerta",
+    "shots_on_target_under85": "−8,5 tiros a puerta",
+    "corners_plus95": "+9,5 tiros de esquina",
+    "corners_minus105": "−10,5 tiros de esquina",
+    "cards_plus4": "+4 tarjetas",
+    "cards_minus5": "−5 tarjetas",
+    "first_half_more_goals": "+0,5 · 1M",
+    "second_half_more_goals": "+0,5 · 2M",
+    "halves_equal_goals": "== · mismas cantidades",
 }
 
 VARIABLES: dict[str, dict[str, Any]] = {}
@@ -1425,7 +1465,7 @@ class BetPlaycitoApp:
             "page": page,
             "page_size": page_size,
             "total": total,
-            "total_pages": (total + page_size - 1) // page_size,
+            "total_pages": max(1, (total + page_size - 1) // page_size),
         }
 
     def change_password(

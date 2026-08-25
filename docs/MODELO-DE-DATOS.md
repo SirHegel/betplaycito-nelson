@@ -1,4 +1,4 @@
-# Modelo de datos · aplicación 1.1.0
+# Modelo de datos · aplicación 1.2.0
 
 [Volver al README](../README.md) · [Ver arquitectura](ARQUITECTURA.md)
 
@@ -15,7 +15,7 @@
 
 ## Esquema físico v1
 
-La aplicación está en la versión **1.1.0**, mientras que el esquema SQLite continúa en la versión **1**. Son numeraciones distintas: una actualización visual o de empaquetado no obliga a cambiar la estructura de la base.
+La aplicación está en la versión **1.2.0**, mientras que el esquema SQLite continúa en la versión **1**. Son numeraciones distintas: una actualización visual, de catálogo o de empaquetado no obliga a cambiar la estructura de la base.
 
 | Tabla | Responsabilidad |
 | --- | --- |
@@ -46,7 +46,7 @@ En Linux, `XDG_DATA_HOME` y `XDG_CONFIG_HOME` reemplazan sus rutas predeterminad
 Actualizar, reinstalar o desinstalar el programa no elimina deliberadamente los directorios del perfil. Cada cuenta de Windows, macOS o Linux obtiene una base independiente. Por tanto:
 
 - copiar solo el ejecutable portable a otro computador no transfiere estadísticas;
-- sustituir la versión 1.1.0 por una posterior no debe reiniciar los contadores;
+- sustituir la versión 1.2.0 por una posterior no debe reiniciar los contadores;
 - para migrar datos se debe exportar un JSON restaurable o realizar una copia coherente con la aplicación cerrada;
 - una copia improvisada de `betplaycito.db` mientras WAL está activo puede quedar incompleta.
 
@@ -56,7 +56,7 @@ Actualizar, reinstalar o desinstalar el programa no elimina deliberadamente los 
 
 La tabla `users` representa la cuenta local autorizada: `id`, `username`, `password_hash`, `active`, `created_at` y `updated_at`. `username` es único sin distinguir mayúsculas y minúsculas. La contraseña en texto plano no pertenece a la base.
 
-Cuando una base nueva no contiene administradores y no existe una configuración que la reemplace, la versión 1.1.0 crea esta credencial pública predeterminada:
+Cuando una base nueva no contiene administradores y no existe una configuración que la reemplace, la versión 1.2.0 crea esta credencial pública predeterminada:
 
 ```text
 Usuario: NelsonRuiz
@@ -115,15 +115,15 @@ La tabla `sessions` guarda `user_id`, un SHA-256 del token aleatorio, creación,
 
 La aplicación instalada sirve la interfaz desde `http://127.0.0.1:8765/` y las escrituras pasan por la API local, sus validaciones y transacciones SQLite. El navegador no es la fuente de verdad.
 
-Si se abre `src/betplaycito/web/index.html` directamente, el protocolo es `file://` y el frontend entra en **Vista de demostración**. En ese modo:
+Si se abre `src/betplaycito/web/index.html` directamente, el protocolo es `file://` y el frontend entra en **Vista previa vacía**. En ese modo:
 
-- carga un conjunto fijo de equipos, movimientos y porcentajes ficticios;
+- no carga equipos, movimientos, partidos ni porcentajes;
 - muestra un banner permanente de solo lectura;
 - no ejecuta solicitudes `fetch` hacia la API;
 - rechaza las acciones de escritura y no usa SQLite, `localStorage` ni otra persistencia;
 - no lee ni altera la base real del perfil del usuario.
 
-Los conteos de la demostración no deben incluirse en respaldos, pruebas de migración ni diagnósticos de pérdida de datos. Para consultar o modificar datos reales, se debe iniciar el ejecutable o la aplicación nativa.
+La vista previa siempre muestra los once grupos con sus contadores en cero. Para consultar o modificar datos reales, se debe iniciar el ejecutable o la aplicación nativa.
 
 ## Catálogo de variables
 
@@ -135,8 +135,15 @@ Los conteos de la demostración no deben incluirse en respaldos, pruebas de migr
 | `local_goal` | `local_scored`, `local_blank` | 2 |
 | `corners` | `corners_over95`, `corners_under95` | 2 |
 | `shots_on_target` | `shots_over95`, `shots_under95` | 2 |
+| `total_shots_range` | `total_shots_over255`, `total_shots_under265` | 2 |
+| `shots_on_target_range` | `shots_on_target_over75`, `shots_on_target_under85` | 2 |
+| `corners_range` | `corners_plus95`, `corners_minus105` | 2 |
+| `cards_range` | `cards_plus4`, `cards_minus5` | 2 |
+| `half_goals` | `first_half_more_goals`, `second_half_more_goals`, `halves_equal_goals` | 3 |
 
 Las etiquetas de pantalla pueden cambiar o traducirse; las claves almacenadas deben permanecer estables para no romper datos anteriores.
+
+Los cinco grupos nuevos se alimentan mediante ajustes manuales. Los pares `+25,5 / −26,5`, `+7,5 / −8,5`, `+9,5 / −10,5` y `+4 / −5` se conservan como indicadores separados exactamente como fueron solicitados; no se derivan automáticamente de un partido ni se declaran alternativas matemáticamente excluyentes. En `half_goals`, `+0,5 · 1M` significa que la primera mitad tuvo al menos un gol más que la segunda, `+0,5 · 2M` significa lo contrario y `==` indica cantidades iguales.
 
 ## Totales derivados
 
@@ -150,7 +157,7 @@ Sin filtro, la vista global incluye ajustes sin equipo, ajustes de todos los equ
 
 El tamaño de muestra de una variable es la suma de los totales de sus opciones. No existe la obligación de que Goles, Esquinas y Tiros al arco tengan el mismo tamaño de muestra, ya que se alimentan independientemente.
 
-El indicador agregado `observations` suma los tamaños de muestra de los seis grupos; no equivale necesariamente al número de partidos únicos. El número de partidos se informa por separado.
+El indicador agregado `observations` suma los tamaños de muestra de los once grupos; no equivale necesariamente al número de partidos únicos. El número de partidos se informa por separado.
 
 ## Invariantes transaccionales
 

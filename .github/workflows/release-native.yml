@@ -49,8 +49,12 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/check_syntax.py
+          python -m py_compile scripts/smoke_native.py
+          python -m unittest discover -s tests -v
           node --check src/betplaycito/web/app.js
+          bash -n scripts/build.sh
           bash -n scripts/build-deb.sh
+          bash -n scripts/build-linux-native.sh
           bash -n packaging/macos/make-icns.sh
           bash -n packaging/macos/build-dmg.sh
           python - <<'PY'
@@ -146,6 +150,15 @@ jobs:
               )
           print("CArchive verificado: index.html, app.css y app.js están incluidos y no están vacíos.")
           '@ | python - $portable
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Probar arranque con base vacía
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          python scripts/smoke_native.py `
+            "dist-native/BetPlaycito-Nelson.exe" `
+            --version $env:APP_VERSION
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Firmar ejecutable portable
@@ -334,6 +347,14 @@ jobs:
           grep -q "${{ matrix.arch }}" build-native/macos-binary.txt
           codesign --verify --deep --strict --verbose=2 "${app_path}"
 
+      - name: Probar arranque con base vacía
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/smoke_native.py \
+            "dist-native/BetPlaycito Nelson.app/Contents/MacOS/BetPlaycito-Nelson" \
+            --version "${APP_VERSION}"
+
       - name: Crear imagen DMG
         shell: bash
         run: |
@@ -441,6 +462,87 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  linux-native:
+    name: Linux x86_64 autónomo
+    needs: validate
+    runs-on: ubuntu-22.04
+    env:
+      APP_VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Instalar herramientas de construcción
+        run: python -m pip install --disable-pip-version-check --requirement packaging/requirements-build.txt
+
+      - name: Construir ejecutable autónomo
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m PyInstaller --noconfirm --clean \
+            --distpath dist-native \
+            --workpath build-native \
+            packaging/BetPlaycito-Nelson.spec
+
+      - name: Validar ejecutable, recursos y arranque vacío
+        shell: bash
+        run: |
+          set -euo pipefail
+          executable="dist-native/BetPlaycito-Nelson"
+          test -x "${executable}"
+          test "$(stat --format='%s' "${executable}")" -gt 1048576
+          file "${executable}" | tee build-native/linux-binary.txt
+          grep -q 'ELF 64-bit' build-native/linux-binary.txt
+
+          python - "${executable}" <<'PY'
+          from pathlib import Path
+          import sys
+
+          from PyInstaller.archive.readers import CArchiveReader
+
+
+          executable = Path(sys.argv[1])
+          archive = CArchiveReader(str(executable))
+          entries = {
+              name.replace("\\", "/").removeprefix("./"): metadata
+              for name, metadata in archive.toc.items()
+          }
+          required = {
+              "betplaycito/web/index.html",
+              "betplaycito/web/app.css",
+              "betplaycito/web/app.js",
+          }
+          missing = sorted(required.difference(entries))
+          empty = sorted(
+              name for name in required.intersection(entries)
+              if int(entries[name][2]) <= 0
+          )
+          if missing or empty:
+              raise SystemExit(f"Recursos faltantes: {missing}; vacíos: {empty}")
+          PY
+
+          python scripts/smoke_native.py "${executable}" --version "${APP_VERSION}"
+
+      - name: Nombrar ejecutable Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv "dist-native/BetPlaycito-Nelson" \
+            "dist-native/BetPlaycito-Nelson-${APP_VERSION}-Linux-x86_64"
+
+      - name: Guardar ejecutable Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linux-x86_64
+          path: dist-native/BetPlaycito-Nelson-${{ env.APP_VERSION }}-Linux-x86_64
+          if-no-files-found: error
+          retention-days: 14
+
   release:
     name: Publicar GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
@@ -449,6 +551,7 @@ jobs:
       - windows
       - macos
       - linux-deb
+      - linux-native
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -472,6 +575,7 @@ jobs:
             "BetPlaycito-Nelson-${APP_VERSION}-Windows-x64-Setup.exe"
             "BetPlaycito-Nelson-${APP_VERSION}-macOS-arm64.dmg"
             "BetPlaycito-Nelson-${APP_VERSION}-macOS-x86_64.dmg"
+            "BetPlaycito-Nelson-${APP_VERSION}-Linux-x86_64"
             "betplaycito-nelson_${APP_VERSION}_all.deb"
           )
           for filename in "${expected[@]}"; do
@@ -495,6 +599,6 @@ jobs:
             gh release create "${GITHUB_REF_NAME}" "${assets[@]}" \
               --verify-tag \
               --title "BetPlaycito Nelson ${APP_VERSION}" \
-              --notes "Descargas listas para Windows x64, Mac Apple Silicon, Mac Intel y Ubuntu/Debian. Acceso inicial: usuario NelsonRuiz, contraseña 1075271744. Los datos quedan guardados en el perfil local del usuario; consulte el README para instalación y respaldos." \
+              --notes "Descargas listas para Windows x64, Mac Apple Silicon, Mac Intel, Linux x86_64 autónomo y Ubuntu/Debian. El panel nuevo no incluye equipos ni estadísticas precargadas. Acceso inicial: usuario NelsonRuiz, contraseña 1075271744. Los datos quedan guardados en el perfil local del usuario; consulte el README para instalación y respaldos." \
               --generate-notes
           fi

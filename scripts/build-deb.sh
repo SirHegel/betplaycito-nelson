@@ -36,6 +36,7 @@ for required_file in \
 done
 
 python3 "${SCRIPT_DIR}/check_syntax.py"
+python3 -m unittest discover -s "${PROJECT_DIR}/tests" -v
 bash -n "${DEBIAN_SOURCE_DIR}/betplaycito-nelson"
 bash -n "${DEBIAN_SOURCE_DIR}/postinst"
 bash -n "${DEBIAN_SOURCE_DIR}/postrm"
@@ -50,6 +51,12 @@ BUILD_DIR="$(mktemp -d -t betplaycito-deb.XXXXXXXX)"
 PACKAGE_ROOT="${BUILD_DIR}/betplaycito-nelson_${VERSION}_all"
 PACKAGE_OUTPUT="${BUILD_DIR}/betplaycito-nelson_${VERSION}_all.deb"
 trap 'rm -rf -- "${BUILD_DIR}"' EXIT
+
+STAGING_DIR="${BUILD_DIR}/source"
+mkdir -p "${STAGING_DIR}"
+cp -a "${SOURCE_DIR}/." "${STAGING_DIR}/"
+find "${STAGING_DIR}" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+find "${STAGING_DIR}" -depth -type d -name '__pycache__' -empty -delete
 
 install -d -m 0755 \
   "${PACKAGE_ROOT}/DEBIAN" \
@@ -67,7 +74,7 @@ chmod 0644 "${PACKAGE_ROOT}/DEBIAN/control"
 install -m 0755 "${DEBIAN_SOURCE_DIR}/postinst" "${PACKAGE_ROOT}/DEBIAN/postinst"
 install -m 0755 "${DEBIAN_SOURCE_DIR}/postrm" "${PACKAGE_ROOT}/DEBIAN/postrm"
 
-python3 -m zipapp "${SOURCE_DIR}" \
+python3 -m zipapp "${STAGING_DIR}" \
   --main "betplaycito.__main__:main" \
   --python "/usr/bin/env python3" \
   --compress \

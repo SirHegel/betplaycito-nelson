@@ -28,9 +28,9 @@
     <name>SirHegel</name>
   </developer>
   <releases>
-    <release version="@VERSION@" date="2026-08-21">
+    <release version="@VERSION@" date="2026-08-24">
       <description>
-        <p>Primera versión instalable de BetPlaycito Nelson.</p>
+        <p>Panel vacío con nuevos indicadores de remates, tiros a puerta, esquinas, tarjetas y goles por mitades.</p>
       </description>
     </release>
   </releases>

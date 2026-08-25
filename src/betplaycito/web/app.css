@@ -1164,10 +1164,9 @@ h3 {
 }
 
 .metric-option__text strong {
-  overflow: hidden;
   font-size: 0.78rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .metric-option__text small {

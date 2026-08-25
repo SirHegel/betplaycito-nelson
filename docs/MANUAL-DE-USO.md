@@ -1,4 +1,4 @@
-# Manual de uso · versión 1.1.0
+# Manual de uso · versión 1.2.0
 
 [Volver al README](../README.md)
 
@@ -6,15 +6,16 @@
 
 ## 1. Descargar el archivo correcto
 
-Descargue la versión 1.1.0 desde [GitHub Releases](https://github.com/SirHegel/betplaycito-nelson/releases). Cada archivo sirve únicamente para la plataforma indicada:
+Descargue la versión 1.2.0 desde [GitHub Releases](https://github.com/SirHegel/betplaycito-nelson/releases). Cada archivo sirve únicamente para la plataforma indicada:
 
 | Sistema | Archivo recomendado | Cuándo elegirlo |
 | --- | --- | --- |
-| Windows 10/11 x64 | `BetPlaycito-Nelson-1.1.0-Windows-x64-Setup.exe` | Opción normal: instala accesos directos y permite desinstalar desde Windows. |
-| Windows 10/11 x64 portable | `BetPlaycito-Nelson-1.1.0-Windows-x64-portable.exe` | Un solo archivo ejecutable, sin asistente de instalación. |
-| Mac Apple Silicon | `BetPlaycito-Nelson-1.1.0-macOS-arm64.dmg` | Equipos con chip M1, M2, M3, M4 o posterior. |
-| Mac Intel | `BetPlaycito-Nelson-1.1.0-macOS-x86_64.dmg` | Macs con procesador Intel. |
-| Ubuntu/Debian | `betplaycito-nelson_1.1.0_all.deb` | Instalación integrada con el menú de aplicaciones. |
+| Windows 10/11 x64 | `BetPlaycito-Nelson-1.2.0-Windows-x64-Setup.exe` | Opción normal: instala accesos directos y permite desinstalar desde Windows. |
+| Windows 10/11 x64 portable | `BetPlaycito-Nelson-1.2.0-Windows-x64-portable.exe` | Un solo archivo ejecutable, sin asistente de instalación. |
+| Mac Apple Silicon | `BetPlaycito-Nelson-1.2.0-macOS-arm64.dmg` | Equipos con chip M1, M2, M3, M4 o posterior. |
+| Mac Intel | `BetPlaycito-Nelson-1.2.0-macOS-x86_64.dmg` | Macs con procesador Intel. |
+| Linux x86_64 portable | `BetPlaycito-Nelson-1.2.0-Linux-x86_64` | Un solo archivo autónomo; no requiere Python. |
+| Ubuntu/Debian | `betplaycito-nelson_1.2.0_all.deb` | Instalación integrada con el menú de aplicaciones. |
 
 Un `.exe` no funciona en macOS o Ubuntu; un `.dmg` no funciona en Windows; y el `.deb` no es un instalador para Windows. Si no conoce el procesador de su Mac, consulte **Apple > Acerca de esta Mac** antes de descargar.
 
@@ -24,14 +25,14 @@ Un `.exe` no funciona en macOS o Ubuntu; un `.dmg` no funciona en Windows; y el 
 
 **Instalador recomendado**
 
-1. Haga doble clic en `BetPlaycito-Nelson-1.1.0-Windows-x64-Setup.exe`.
+1. Haga doble clic en `BetPlaycito-Nelson-1.2.0-Windows-x64-Setup.exe`.
 2. Acepte la solicitud de Control de cuentas de usuario únicamente si el archivo proviene del repositorio oficial.
 3. Siga el asistente; puede dejar marcada la creación del acceso directo.
 4. Abra **BetPlaycito Nelson** desde el escritorio o el menú Inicio.
 
 **Ejecutable portable de un solo archivo**
 
-1. Guarde `BetPlaycito-Nelson-1.1.0-Windows-x64-portable.exe` en una carpeta reconocible.
+1. Guarde `BetPlaycito-Nelson-1.2.0-Windows-x64-portable.exe` en una carpeta reconocible.
 2. Haga doble clic. No necesita copiar HTML, Python ni otras carpetas a su lado.
 3. Para pasarlo a otro computador, copie ese único `.exe`. Los datos del computador anterior no viajan dentro del archivo; expórtelos como JSON si también necesita trasladarlos.
 
@@ -45,14 +46,25 @@ Los artefactos pueden publicarse sin certificado comercial. Microsoft Defender S
 
 Si el paquete no está firmado o notarizado, macOS puede impedir la primera apertura. Después de intentar abrirlo, y solo tras verificar que procede del repositorio oficial, vaya a **Configuración del Sistema > Privacidad y seguridad** y use **Abrir de todos modos**. Apple explica este flujo y sus riesgos en [Abrir apps de forma segura en el Mac](https://support.apple.com/es-co/102445). No omita una alerta que indique que el archivo está dañado o contiene software malicioso: vuelva a descargarlo desde la publicación oficial.
 
+### Linux x86_64 portable
+
+Guarde `BetPlaycito-Nelson-1.2.0-Linux-x86_64` en una carpeta reconocible y ejecute:
+
+```bash
+chmod +x BetPlaycito-Nelson-1.2.0-Linux-x86_64
+./BetPlaycito-Nelson-1.2.0-Linux-x86_64
+```
+
+Este archivo incluye Python y la interfaz. El paquete `.deb` de la sección siguiente es preferible en Ubuntu o Debian cuando se desea integración con el menú de aplicaciones.
+
 ### Ubuntu o Debian
 
-Puede hacer doble clic en `betplaycito-nelson_1.1.0_all.deb`, abrirlo con el instalador de software y pulsar **Instalar**. El sistema solicitará la contraseña administrativa del computador.
+Puede hacer doble clic en `betplaycito-nelson_1.2.0_all.deb`, abrirlo con el instalador de software y pulsar **Instalar**. El sistema solicitará la contraseña administrativa del computador.
 
 También puede instalarlo desde una terminal ubicada en la carpeta de descarga:
 
 ```bash
-sudo apt install ./betplaycito-nelson_1.1.0_all.deb
+sudo apt install ./betplaycito-nelson_1.2.0_all.deb
 ```
 
 APT gestiona las dependencias del paquete local; consulte la [documentación de paquetes de Ubuntu](https://ubuntu.com/server/docs/tutorial/managing-software/#installing-a-deb-file). Al terminar, abra **BetPlaycito Nelson** desde el menú de aplicaciones. Una actualización con otro `.deb` reemplaza el programa, pero conserva los datos del usuario.
@@ -65,11 +77,14 @@ Esta modalidad es opcional y requiere Python 3.10 o posterior:
 PYTHONPATH=src python3 -m betplaycito
 ```
 
-Para construir el zipapp y el paquete de Ubuntu desde el repositorio:
+Para construir el zipapp, el paquete de Ubuntu y el ejecutable Linux autónomo desde el repositorio:
 
 ```bash
 bash scripts/build.sh
 bash scripts/build-deb.sh
+python3 -m venv .venv-build
+.venv-build/bin/python -m pip install -r packaging/requirements-build.txt
+BETPLAYCITO_BUILD_PYTHON=.venv-build/bin/python bash scripts/build-linux-native.sh
 ```
 
 `config.local.json`, las variables de entorno y las opciones `--config` o `--data-dir` permiten personalizar una instalación avanzada antes de crear su primera base. No son necesarios para usar los instaladores normales.
@@ -116,7 +131,7 @@ Para cerrar:
 
 No apague el equipo durante una exportación, restauración o copia de seguridad.
 
-Abrir `src/betplaycito/web/index.html` directamente produce una **Vista de demostración** mediante `file://`. Contiene datos ficticios, muestra un banner de solo lectura, no consulta la API y no guarda cambios. Sirve para revisar el diseño, no para trabajar. Para usar datos reales, abra el instalador, la aplicación o el ejecutable correspondiente.
+Abrir `src/betplaycito/web/index.html` directamente produce una **Vista previa vacía** mediante `file://`. No contiene equipos, movimientos ni estadísticas; muestra un banner de solo lectura, no consulta la API y no guarda cambios. Sirve para revisar el diseño, no para trabajar. Para ingresar datos, abra el instalador, la aplicación o el ejecutable correspondiente.
 
 ## 6. Elegir el contexto
 
@@ -131,7 +146,7 @@ Si deja de usar un equipo, archívelo. Sus estadísticas e historial se conserva
 
 ## 7. Alimentar los sumadores
 
-Cada tarjeta contiene opciones excluyentes dentro de su propio gráfico:
+Cada tarjeta contiene opciones o indicadores dentro de su propio gráfico:
 
 - `+` registra una unidad en la opción;
 - `−` registra una corrección de una unidad;
@@ -183,8 +198,15 @@ Use este módulo cuando conserva el detalle de una observación; use los sumador
 | Esquinas 9.5 | Más = 10 o más esquinas totales; Menos = 0–9 |
 | Tiros al arco 9.5 | Más = 10 o más tiros al arco totales; Menos = 0–9 |
 | Local marcó | Sí cuando el local hizo al menos un gol; No cuando terminó en cero |
+| Remates totales | `+25,5` y `−26,5` son los dos indicadores manuales solicitados |
+| Tiros a puerta | `+7,5` y `−8,5` son los dos indicadores manuales solicitados |
+| Tiros de esquina | `+9,5` y `−10,5` son los dos indicadores manuales solicitados |
+| Tarjetas | `+4` y `−5` son los dos indicadores manuales solicitados |
+| Goles por mitades | `+0,5 · 1M` si la primera tuvo al menos un gol más; `+0,5 · 2M` si la segunda tuvo al menos uno más; `==` si tuvieron la misma cantidad |
 
 Cada tarjeta calcula su propio denominador. Que Goles tenga 500 registros y Esquinas 320 no es un error: significa que se ingresó distinta cantidad de información. Compare porcentajes junto con su tamaño de muestra.
+
+Los cuatro pares nuevos se registran manualmente y por separado. Algunas líneas se solapan en el entero intermedio, por lo que **Nuevo partido** no las calcula automáticamente. La tarjeta de mitades sí usa una sola de sus tres opciones para cada comparación.
 
 ## 10. Leer los gráficos y la explicación
 
@@ -229,10 +251,10 @@ No altere manualmente `betplaycito.db`, sus archivos `-wal` o `-shm`, ni copie u
 
 ### No abre el aplicativo
 
-- Confirme que descargó el artefacto correspondiente a Windows, Mac Apple Silicon, Mac Intel o Ubuntu; no cambie solo la extensión del archivo.
+- Confirme que descargó el artefacto correspondiente a Windows, Mac Apple Silicon, Mac Intel, Linux x86_64 o Ubuntu/Debian; no cambie solo la extensión del archivo.
 - En Windows, pruebe primero el instalador `Setup.exe`; revise si SmartScreen o el antivirus puso el archivo en cuarentena y continúe únicamente si verificó su procedencia.
 - En macOS, confirme la arquitectura y revise **Privacidad y seguridad** después del primer intento de apertura.
-- En Ubuntu/Debian, reinstale el `.deb` con `sudo apt install ./betplaycito-nelson_1.1.0_all.deb` para que APT informe cualquier dependencia pendiente.
+- En Ubuntu/Debian, reinstale el `.deb` con `sudo apt install ./betplaycito-nelson_1.2.0_all.deb` para que APT informe cualquier dependencia pendiente.
 - Si el proceso está abierto pero el navegador no apareció, visite `http://127.0.0.1:8765/`. Esa dirección solo responde mientras BetPlaycito está ejecutándose.
 - Si usa código fuente, compruebe Python 3.10 o posterior y que `config.local.json`, si existe, sea JSON válido.
 
@@ -253,10 +275,10 @@ No altere manualmente `betplaycito.db`, sus archivos `-wal` o `-shm`, ni copie u
 
 ### Los datos no aparecen
 
-- Si aparece el banner **Vista de demostración**, cerró o no inició el aplicativo real: abrió `index.html` directamente y esos números son ficticios.
+- Si aparece el banner **Vista previa vacía**, abrió `index.html` directamente. Esa vista siempre muestra cero y no guarda; inicie el aplicativo real.
 - Verifique que abrió la aplicación con la misma cuenta de Windows, macOS o Linux; cada perfil tiene almacenamiento separado.
 - El ejecutable portable de Windows también usa `%LOCALAPPDATA%`; mover el `.exe` no mueve la base.
 - Si usa código fuente o zipapp, verifique que abrió el mismo proyecto y su mismo directorio `datos/`.
 - Restaure únicamente con la función y el formato admitidos por la versión instalada.
 
-Si reporta un problema, incluya la versión 1.1.0, el sistema operativo, el nombre exacto del archivo descargado, el mensaje y pasos reproducibles. Aunque la contraseña inicial es pública, quite del reporte contraseñas nuevas, cookies, bases y respaldos privados.
+Si reporta un problema, incluya la versión 1.2.0, el sistema operativo, el nombre exacto del archivo descargado, el mensaje y pasos reproducibles. Aunque la contraseña inicial es pública, quite del reporte contraseñas nuevas, cookies, bases y respaldos privados.

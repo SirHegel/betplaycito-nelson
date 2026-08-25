@@ -8,10 +8,21 @@ publicar una etiqueta `vX.Y.Z`. La etiqueta debe coincidir con `__version__` en
 
 - Windows x64: ejecutable portable de un archivo e instalador Inno Setup con UAC.
 - macOS Apple Silicon y macOS Intel: bundle `.app` dentro de una imagen `.dmg`.
+- Linux x86_64: ejecutable autónomo de un archivo construido en Ubuntu 22.04 para ampliar la compatibilidad de `glibc`.
 - Debian/Ubuntu: paquete `.deb` generado por `scripts/build-deb.sh`.
 
 Los ejecutables congelados incluyen `src/betplaycito/web`, por lo que no
 dependen de archivos HTML, CSS o JavaScript ubicados junto al binario.
+
+El ejecutable Linux autónomo se puede reproducir localmente con:
+
+```bash
+python3 -m venv .venv-build
+.venv-build/bin/python -m pip install -r packaging/requirements-build.txt
+BETPLAYCITO_BUILD_PYTHON=.venv-build/bin/python bash scripts/build-linux-native.sh
+```
+
+PyInstaller no es un compilador cruzado: Windows debe construirse en Windows y cada arquitectura de macOS en un ejecutor macOS compatible. El workflow aplica esa separación y valida los recursos incluidos antes de publicar.
 
 ## Firma opcional
 

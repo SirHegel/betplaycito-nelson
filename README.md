@@ -15,6 +15,7 @@ La versión más reciente está en [GitHub Releases](https://github.com/SirHegel
 | Windows x64 portable | `BetPlaycito-Nelson-*-Windows-x64-portable.exe` | Un solo archivo; doble clic sin instalar. |
 | Mac con Apple Silicon | `BetPlaycito-Nelson-*-macOS-arm64.dmg` | Abrir la imagen y arrastrar la app a Aplicaciones. |
 | Mac Intel | `BetPlaycito-Nelson-*-macOS-x86_64.dmg` | Abrir la imagen y arrastrar la app a Aplicaciones. |
+| Linux x86_64 portable | `BetPlaycito-Nelson-*-Linux-x86_64` | Dar permiso de ejecución y abrir; no requiere Python. |
 | Ubuntu/Debian | `betplaycito-nelson_*_all.deb` | Abrir con el instalador de software o instalar con `apt`. |
 
 Los binarios publicados automáticamente todavía no están firmados con certificados comerciales. Windows o macOS pueden mostrar una advertencia de editor/desarrollador desconocido la primera vez; revise que la descarga provenga de este repositorio antes de permitir su apertura.
@@ -36,7 +37,8 @@ El usuario ya aparece escrito en la pantalla de acceso. La contraseña se valida
 - Contexto global o por equipos, sin exigir rival ni partido detallado.
 - Comparación agregada entre varios equipos.
 - Registro opcional de partidos con derivación automática de variables.
-- Seis grupos de análisis: resultado; goles 2.5; Gol-Gol; marcador local; córners 9.5; y tiros al arco 9.5.
+- Once grupos de análisis: los seis originales y cinco nuevas tarjetas para remates, tiros a puerta, tiros de esquina, tarjetas y goles por mitades.
+- Gráfico circular de mitades con `+0,5 · 1M`, `+0,5 · 2M` y `==`, donde se compara en cuál mitad hubo más goles o si quedaron iguales.
 - Cantidad, porcentaje y tamaño de muestra en gráficos tipo dona.
 - Explicación automática de la opción seleccionada frente a su alternativa.
 - Historial inmutable: una corrección agrega un movimiento inverso, no borra el original.
@@ -56,9 +58,9 @@ SQLite es la fuente principal de verdad. Cada cambio confirmado se guarda inmedi
 
 Desinstalar conserva deliberadamente los datos del usuario. Además, descargue periódicamente un respaldo JSON desde la aplicación y guárdelo en otra unidad.
 
-## Vista previa del diseño
+## Vista previa vacía del diseño
 
-Puede abrir [`src/betplaycito/web/index.html`](src/betplaycito/web/index.html) directamente para revisar el diseño con datos ficticios. Esa modalidad se identifica como **Vista de demostración**, es de solo lectura y no guarda cambios. El aplicativo real debe abrirse desde su instalador o ejecutable.
+Puede abrir [`src/betplaycito/web/index.html`](src/betplaycito/web/index.html) directamente para revisar el diseño vacío. Esa modalidad no contiene equipos, movimientos ni estadísticas, es de solo lectura y no guarda cambios. Para ingresar datos debe abrir el aplicativo desde su instalador o ejecutable.
 
 ## Ejecutar desde el código fuente
 
@@ -68,18 +70,21 @@ Requiere Python 3.10 o posterior y un navegador moderno. La aplicación en ejecu
 PYTHONPATH=src python3 -m betplaycito
 ```
 
-Para crear el zipapp y el paquete de Ubuntu:
+Para crear el zipapp, el paquete de Ubuntu y el ejecutable Linux autónomo:
 
 ```bash
 bash scripts/build.sh
 bash scripts/build-deb.sh
+python3 -m venv .venv-build
+.venv-build/bin/python -m pip install -r packaging/requirements-build.txt
+BETPLAYCITO_BUILD_PYTHON=.venv-build/bin/python bash scripts/build-linux-native.sh
 ```
 
 La configuración predeterminada se puede reemplazar con `config.local.json`, variables de entorno o las opciones `--config` y `--data-dir`. Consulte [Arquitectura](docs/ARQUITECTURA.md#ejecución-y-empaquetado).
 
 ## Construcciones nativas
 
-El workflow `release-native.yml` construye cada artefacto en su sistema operativo de destino: Windows x64, macOS Apple Silicon, macOS Intel y Ubuntu. Esto evita presentar un archivo de Linux como si pudiera ejecutarse en Windows o Mac. Las instrucciones técnicas están en [Publicaciones nativas](packaging/NATIVE-RELEASES.md).
+El workflow `release-native.yml` construye cada artefacto en su sistema operativo de destino: Windows x64, macOS Apple Silicon, macOS Intel, Linux x86_64 autónomo y Ubuntu/Debian. Esto evita presentar un archivo de Linux como si pudiera ejecutarse en Windows o Mac. Las instrucciones técnicas están en [Publicaciones nativas](packaging/NATIVE-RELEASES.md).
 
 ## Alcance local
 
