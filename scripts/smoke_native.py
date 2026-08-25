@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import socket
 import sqlite3
 import subprocess
@@ -42,6 +43,56 @@ def wait_for_health(url: str, process: subprocess.Popen[bytes], timeout: float) 
     raise RuntimeError(f"El health check no respondió a tiempo: {last_error}")
 
 
+def stop_process(process: subprocess.Popen[bytes], *, timeout: float = 15.0) -> None:
+    """Detiene el ejecutable junto con los procesos que haya lanzado.
+
+    El bootloader de PyInstaller en modo *onefile* ejecuta la aplicación real como
+    proceso hijo. Terminar solo el proceso padre deja vivo al hijo, que conserva
+    abierto el archivo de registro y bloquea el borrado del directorio temporal en
+    Windows (``WinError 32``). Por eso se detiene el árbol completo.
+    """
+
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            capture_output=True,
+            check=False,
+        )
+    else:
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError, OSError):
+            process.terminate()
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            pass
+
+
+def wait_for_release(path: Path, *, timeout: float = 10.0) -> None:
+    """Espera a que el sistema operativo libere el archivo de registro.
+
+    En Windows el cierre de un proceso no es instantáneo: sus descriptores siguen
+    abiertos unos milisegundos después de que ``wait()`` retorna.
+    """
+
+    if os.name != "nt" or not path.exists():
+        return
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with path.open("ab"):
+                return
+        except PermissionError:
+            time.sleep(0.25)
+
+
 def business_counts(database: Path) -> dict[str, int]:
     connection = sqlite3.connect(database)
     try:
@@ -58,7 +109,10 @@ def smoke(executable: Path, *, expected_version: str, timeout: float) -> dict:
     if not executable.is_file():
         raise FileNotFoundError(f"No existe el ejecutable: {executable}")
     port = available_port()
-    with tempfile.TemporaryDirectory(prefix="betplaycito-native-smoke-") as raw_directory:
+    with tempfile.TemporaryDirectory(
+        prefix="betplaycito-native-smoke-",
+        ignore_cleanup_errors=True,
+    ) as raw_directory:
         directory = Path(raw_directory)
         data_dir = directory / "datos"
         log_path = directory / "application.log"
@@ -79,6 +133,7 @@ def smoke(executable: Path, *, expected_version: str, timeout: float) -> dict:
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 env=environment,
+                start_new_session=os.name != "nt",
             )
             try:
                 payload = wait_for_health(
@@ -95,17 +150,13 @@ def smoke(executable: Path, *, expected_version: str, timeout: float) -> dict:
                 if counts != {"teams": 0, "adjustments": 0, "matches": 0}:
                     raise RuntimeError(f"La base nueva contiene datos de negocio: {counts}")
             except Exception as exc:
+                stop_process(process)
                 log.flush()
                 details = log_path.read_text(encoding="utf-8", errors="replace")
                 raise RuntimeError(f"{exc}\n--- registro del ejecutable ---\n{details}") from exc
             finally:
-                if process.poll() is None:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        process.wait(timeout=5)
+                stop_process(process)
+        wait_for_release(log_path)
         return {"health": health, "business_rows": counts}
 
 
