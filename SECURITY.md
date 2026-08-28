@@ -36,8 +36,8 @@ PYTHONPATH=src python3 -m betplaycito --hash-password --config config.local.json
 ```
 
 La escritura es atómica, elimina `admin_password` si estaba presente y limita el archivo a modo
-`600` cuando la plataforma lo permite. El comando solo confirma la ruta de destino; nunca imprime
-la contraseña ni su derivación PBKDF2.
+`600` cuando la plataforma lo permite. El comando solo confirma que actualizó
+`config.local.json`; nunca imprime la ruta privada, la contraseña ni su derivación PBKDF2.
 
 Recomendaciones:
 

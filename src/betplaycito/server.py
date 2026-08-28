@@ -415,7 +415,7 @@ def _load_config(path: Path) -> dict[str, Any]:
         mode = path.stat().st_mode & 0o777
         if mode & 0o077:
             LOGGER.warning(
-                "Se recomienda limitar los permisos de %s a 600 (actuales: %o).", path, mode
+                "Se recomienda limitar config.local.json a 600 (permisos actuales: %o).", mode
             )
     except OSError:
         pass
@@ -715,8 +715,8 @@ class BetPlaycitoApp:
             self.data_dir / "betplaycito.db", backup_dir=backup_dir
         )
         if self.database.path.is_file() and self.database.path.stat().st_size > 0:
-            automatic = self.database.backup()
-            LOGGER.info("Respaldo automático previo al arranque: %s", automatic)
+            self.database.backup()
+            LOGGER.info("Respaldo automático privado creado antes del arranque.")
         self.database.initialize()
         self.login_limiter = LoginLimiter()
         self.setup_token: str | None = None
@@ -2794,8 +2794,7 @@ def run_server(
     actual_port = int(server.server_address[1])
     url = f"http://{HOST}:{actual_port}/"
     LOGGER.info("BetPlaycito %s disponible en %s", __version__, url)
-    LOGGER.info("Base de datos: %s", app.database.path)
-    LOGGER.info("Respaldos: %s", app.database.backup_dir)
+    LOGGER.info("Almacenamiento local privado inicializado.")
     if open_browser:
         timer = threading.Timer(0.5, lambda: webbrowser.open(url, new=1))
         timer.daemon = True

@@ -54,14 +54,14 @@ def _store_password_hash(config_path: Path | None = None) -> int:
         return 2
     try:
         encoded = hash_password(first)
-        destination = store_admin_password_hash(encoded, config_path=config_path)
+        store_admin_password_hash(encoded, config_path=config_path)
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    except (OSError, RuntimeError) as exc:
-        print(f"No se pudo guardar la configuración: {exc}", file=sys.stderr)
+    except (OSError, RuntimeError):
+        print("No se pudo actualizar config.local.json de forma privada.", file=sys.stderr)
         return 2
-    print(f"Hash PBKDF2 guardado de forma privada en {destination}.")
+    print("Hash PBKDF2 guardado de forma privada en config.local.json.")
     return 0
 
 

@@ -141,6 +141,7 @@ class PasswordConfigurationSecurityTests(unittest.TestCase):
         combined_output = stdout.getvalue() + stderr.getvalue()
         self.assertNotIn(password, combined_output)
         self.assertNotIn(encoded, combined_output)
+        self.assertNotIn(str(destination), combined_output)
         self.assertEqual(list(destination.parent.glob(".*.tmp")), [])
         if os.name != "nt":
             self.assertEqual(stat.S_IMODE(destination.stat().st_mode), 0o600)
