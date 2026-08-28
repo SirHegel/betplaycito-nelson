@@ -46,9 +46,20 @@ class StoragePathSecurityTests(unittest.TestCase):
 
         data, config, backups = resolve_storage_paths()
 
-        self.assertEqual(data, self.home / "data")
-        self.assertEqual(config, self.home / "config" / "config.local.json")
-        self.assertEqual(backups, self.home / "backups")
+        self.assertEqual(
+            data, Path(os.path.normcase(os.path.realpath(self.home / "data")))
+        )
+        self.assertEqual(
+            config,
+            Path(
+                os.path.normcase(
+                    os.path.realpath(self.home / "config" / "config.local.json")
+                )
+            ),
+        )
+        self.assertEqual(
+            backups, Path(os.path.normcase(os.path.realpath(self.home / "backups")))
+        )
 
     def test_rejects_arbitrary_absolute_environment_path(self) -> None:
         os.environ["BETPLAYCITO_DATA_DIR"] = "/etc"
