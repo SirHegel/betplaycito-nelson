@@ -14,6 +14,9 @@ from betplaycito import __main__ as entrypoint
 from betplaycito.server import resolve_storage_paths, verify_password
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
 class StoragePathSecurityTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -84,10 +87,21 @@ class StoragePathSecurityTests(unittest.TestCase):
         target = self.outside / "config.local.json"
         target.write_text("{}\n", encoding="utf-8")
         link = self.home / "config.local.json"
-        link.symlink_to(target)
+        try:
+            link.symlink_to(target)
+        except OSError as exc:
+            self.skipTest(f"La plataforma no permite crear symlinks: {exc}")
 
         with self.assertRaisesRegex(RuntimeError, "ubicación de la configuración"):
             resolve_storage_paths(config_path=link)
+
+    def test_debian_launcher_defers_creation_until_python_validation(self) -> None:
+        launcher = (PROJECT_ROOT / "packaging/debian/betplaycito-nelson").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pwd.getpwuid(os.getuid()).pw_dir", launcher)
+        self.assertNotIn("mkdir -p", launcher)
+        self.assertIn("debe permanecer dentro del perfil", launcher)
 
 
 class PasswordConfigurationSecurityTests(unittest.TestCase):
