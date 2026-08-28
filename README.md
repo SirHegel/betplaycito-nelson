@@ -75,7 +75,7 @@ bash scripts/build.sh
 bash scripts/build-deb.sh
 ```
 
-La configuración predeterminada se puede reemplazar con `config.local.json`, variables de entorno o las opciones `--config` y `--data-dir`. Consulte [Arquitectura](docs/ARQUITECTURA.md#ejecución-y-empaquetado).
+La configuración predeterminada se puede reemplazar con `config.local.json`, variables de entorno o las opciones `--config` y `--data-dir`. Las ubicaciones personalizadas deben permanecer dentro del perfil del usuario o de la carpeta de la aplicación. Consulte [Arquitectura](docs/ARQUITECTURA.md#ejecución-y-empaquetado).
 
 ## Construcciones nativas
 

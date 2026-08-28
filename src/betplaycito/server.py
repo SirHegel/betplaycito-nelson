@@ -299,6 +299,27 @@ def default_project_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _trusted_user_home() -> Path:
+    """Return the OS account profile without trusting environment overrides."""
+
+    if os.name == "nt":
+        import ctypes
+
+        buffer = ctypes.create_unicode_buffer(32_768)
+        # CSIDL_PROFILE (40) resolves the profile of the process account.
+        result = ctypes.windll.shell32.SHGetFolderPathW(None, 40, None, 0, buffer)
+        if result != 0 or not buffer.value:
+            raise RuntimeError("No se pudo determinar el perfil del usuario actual.")
+        return Path(buffer.value)
+
+    import pwd
+
+    try:
+        return Path(pwd.getpwuid(os.getuid()).pw_dir)
+    except (KeyError, OSError) as exc:
+        raise RuntimeError("No se pudo determinar el perfil del usuario actual.") from exc
+
+
 def default_user_storage(root: Path) -> tuple[Path, Path, Path]:
     """Devuelve datos, configuración y respaldos apropiados para la plataforma.
 
@@ -308,7 +329,7 @@ def default_user_storage(root: Path) -> tuple[Path, Path, Path]:
 
     if not getattr(sys, "frozen", False):
         return root / "datos", root / "config.local.json", root / "respaldos"
-    home = Path.home()
+    home = _trusted_user_home()
     if os.name == "nt":
         data_base = Path(os.environ.get("LOCALAPPDATA") or home / "AppData" / "Local")
         config_base = Path(os.environ.get("APPDATA") or home / "AppData" / "Roaming")
@@ -323,6 +344,58 @@ def default_user_storage(root: Path) -> tuple[Path, Path, Path]:
         data_dir = data_base / "betplaycito-nelson"
         config_path = config_base / "betplaycito-nelson" / "config.local.json"
     return data_dir, config_path, data_dir / "respaldos"
+
+
+def _resolve_private_location(value: os.PathLike[str] | str, *, root: Path, label: str) -> Path:
+    """Normalize an operator-provided location and enforce a private boundary.
+
+    Runtime path overrides are accepted only below the application directory or
+    the current user's home.  The real-path check happens before any file-system
+    access by the caller, so ``..``, sibling-prefix and symlink escapes fail closed.
+    """
+
+    try:
+        supplied = os.fspath(value)
+        if not supplied.strip():
+            raise ValueError("empty path")
+        raw = os.path.expanduser(supplied)
+        if not os.path.isabs(raw):
+            raw = os.path.join(os.fspath(root), raw)
+        candidate = os.path.normcase(os.path.realpath(raw))
+        project_root = os.path.normcase(os.path.realpath(os.fspath(root)))
+        home_root = os.path.normcase(os.path.realpath(os.fspath(_trusted_user_home())))
+    except (OSError, TypeError, ValueError) as exc:
+        raise RuntimeError(f"La ubicación de {label} no es válida.") from exc
+
+    if project_root != os.path.dirname(project_root) and candidate.startswith(
+        project_root.rstrip(os.sep) + os.sep
+    ):
+        return Path(candidate)
+    if home_root != os.path.dirname(home_root) and candidate.startswith(
+        home_root.rstrip(os.sep) + os.sep
+    ):
+        return Path(candidate)
+    raise RuntimeError(
+        f"La ubicación de {label} debe permanecer dentro de la aplicación "
+        "o del perfil del usuario."
+    )
+
+
+def resolve_storage_paths(
+    *, data_dir: Path | None = None, config_path: Path | None = None
+) -> tuple[Path, Path, Path]:
+    """Return validated data, configuration and backup locations."""
+
+    root = default_project_root()
+    default_data, default_config, default_backups = default_user_storage(root)
+    selected_data = data_dir or os.environ.get("BETPLAYCITO_DATA_DIR") or default_data
+    selected_config = config_path or os.environ.get("BETPLAYCITO_CONFIG") or default_config
+    selected_backups = os.environ.get("BETPLAYCITO_BACKUP_DIR") or default_backups
+    return (
+        _resolve_private_location(selected_data, root=root, label="los datos"),
+        _resolve_private_location(selected_config, root=root, label="la configuración"),
+        _resolve_private_location(selected_backups, root=root, label="los respaldos"),
+    )
 
 
 def _load_config(path: Path) -> dict[str, Any]:
@@ -342,11 +415,61 @@ def _load_config(path: Path) -> dict[str, Any]:
         mode = path.stat().st_mode & 0o777
         if mode & 0o077:
             LOGGER.warning(
-                "Se recomienda limitar los permisos de %s a 600 (actuales: %o).", path, mode
+                "Se recomienda limitar config.local.json a 600 (permisos actuales: %o).", mode
             )
     except OSError:
         pass
     return raw
+
+
+def store_admin_password_hash(
+    encoded: str, *, config_path: Path | None = None
+) -> Path:
+    """Store a validated password derivation atomically without printing it."""
+
+    _parse_password_hash(encoded)
+    _, destination, _ = resolve_storage_paths(config_path=config_path)
+    if destination.suffix.casefold() != ".json":
+        raise RuntimeError("El archivo de configuración debe usar la extensión .json.")
+    document = _load_config(destination)
+    document.pop("admin_password", None)
+    document["admin_password_hash"] = encoded
+    parent_existed = destination.parent.exists()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if not parent_existed:
+        try:
+            destination.parent.chmod(0o700)
+        except OSError:
+            pass
+
+    temporary = destination.parent / f".{destination.name}.{secrets.token_hex(12)}.tmp"
+    descriptor = -1
+    try:
+        descriptor = os.open(
+            temporary,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o600,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
+            descriptor = -1
+            json.dump(document, stream, ensure_ascii=False, indent=2, sort_keys=True)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+        try:
+            destination.chmod(0o600)
+        except OSError:
+            pass
+    except Exception:
+        if descriptor >= 0:
+            os.close(descriptor)
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+    return destination
 
 
 SCHEMA_SQL = """
@@ -439,8 +562,8 @@ CREATE INDEX IF NOT EXISTS idx_match_categories_variable ON match_categories(var
 
 class Database:
     def __init__(self, path: Path, *, backup_dir: Path | None = None) -> None:
-        self.path = path.resolve()
-        self.backup_dir = (backup_dir or self.path.parent / "respaldos").resolve()
+        self.path = path
+        self.backup_dir = backup_dir or self.path.parent / "respaldos"
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(
@@ -585,22 +708,15 @@ def derive_match_categories(
 
 class BetPlaycitoApp:
     def __init__(self, *, data_dir: Path | None = None, config_path: Path | None = None) -> None:
-        root = default_project_root()
-        default_data, default_config, default_backups = default_user_storage(root)
-        configured_data = os.environ.get("BETPLAYCITO_DATA_DIR")
-        self.data_dir = Path(data_dir or configured_data or default_data).expanduser().resolve()
-        configured_file = os.environ.get("BETPLAYCITO_CONFIG")
-        self.config_path = Path(
-            config_path or configured_file or default_config
-        ).expanduser().resolve()
-        configured_backups = os.environ.get("BETPLAYCITO_BACKUP_DIR")
-        backup_dir = Path(configured_backups or default_backups).expanduser().resolve()
+        self.data_dir, self.config_path, backup_dir = resolve_storage_paths(
+            data_dir=data_dir, config_path=config_path
+        )
         self.database = Database(
             self.data_dir / "betplaycito.db", backup_dir=backup_dir
         )
         if self.database.path.is_file() and self.database.path.stat().st_size > 0:
-            automatic = self.database.backup()
-            LOGGER.info("Respaldo automático previo al arranque: %s", automatic)
+            self.database.backup()
+            LOGGER.info("Respaldo automático privado creado antes del arranque.")
         self.database.initialize()
         self.login_limiter = LoginLimiter()
         self.setup_token: str | None = None
@@ -2678,8 +2794,7 @@ def run_server(
     actual_port = int(server.server_address[1])
     url = f"http://{HOST}:{actual_port}/"
     LOGGER.info("BetPlaycito %s disponible en %s", __version__, url)
-    LOGGER.info("Base de datos: %s", app.database.path)
-    LOGGER.info("Respaldos: %s", app.database.backup_dir)
+    LOGGER.info("Almacenamiento local privado inicializado.")
     if open_browser:
         timer = threading.Timer(0.5, lambda: webbrowser.open(url, new=1))
         timer.daemon = True

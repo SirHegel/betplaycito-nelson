@@ -41,7 +41,7 @@ Los paquetes nativos separan el programa de la información mutable. PyInstaller
 | Ubuntu/Debian | `~/.local/share/betplaycito-nelson/betplaycito.db` | `~/.local/share/betplaycito-nelson/respaldos/` | `~/.config/betplaycito-nelson/config.local.json` |
 | Código fuente o zipapp | `datos/betplaycito.db` bajo la raíz del proyecto | `respaldos/` bajo la raíz | `config.local.json` bajo la raíz |
 
-En Linux, `XDG_DATA_HOME` y `XDG_CONFIG_HOME` reemplazan sus rutas predeterminadas cuando contienen rutas absolutas. Los argumentos `--data-dir` y `--config`, o sus variables de entorno equivalentes, también pueden reemplazar ubicaciones en una ejecución avanzada.
+En Linux, `XDG_DATA_HOME` y `XDG_CONFIG_HOME` reemplazan sus rutas predeterminadas cuando apuntan dentro del perfil del usuario. Los argumentos `--data-dir` y `--config`, o sus variables de entorno equivalentes, también pueden reemplazar ubicaciones en una ejecución avanzada, siempre dentro del perfil o de la carpeta de la aplicación.
 
 Actualizar, reinstalar o desinstalar el programa no elimina deliberadamente los directorios del perfil. Cada cuenta de Windows, macOS o Linux obtiene una base independiente. Por tanto:
 

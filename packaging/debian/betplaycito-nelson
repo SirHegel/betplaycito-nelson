@@ -9,19 +9,32 @@ if [ ! -r "${APP_BUNDLE}" ]; then
     exit 1
 fi
 
-if [ -z "${HOME:-}" ]; then
+betplaycito_home=$(/usr/bin/python3 -c '
+import os
+import pwd
+print(pwd.getpwuid(os.getuid()).pw_dir)
+' 2>/dev/null || true)
+if [ -z "${betplaycito_home}" ]; then
     echo "No se pudo determinar la carpeta personal del usuario." >&2
     exit 1
 fi
 
 case "${XDG_DATA_HOME:-}" in
-    /*) betplaycito_data_home=${XDG_DATA_HOME} ;;
-    *) betplaycito_data_home=${HOME}/.local/share ;;
+    "${betplaycito_home}"|"${betplaycito_home}"/*) betplaycito_data_home=${XDG_DATA_HOME} ;;
+    /*)
+        echo "XDG_DATA_HOME debe permanecer dentro del perfil del usuario." >&2
+        exit 1
+        ;;
+    *) betplaycito_data_home=${betplaycito_home}/.local/share ;;
 esac
 
 case "${XDG_CONFIG_HOME:-}" in
-    /*) betplaycito_config_home=${XDG_CONFIG_HOME} ;;
-    *) betplaycito_config_home=${HOME}/.config ;;
+    "${betplaycito_home}"|"${betplaycito_home}"/*) betplaycito_config_home=${XDG_CONFIG_HOME} ;;
+    /*)
+        echo "XDG_CONFIG_HOME debe permanecer dentro del perfil del usuario." >&2
+        exit 1
+        ;;
+    *) betplaycito_config_home=${betplaycito_home}/.config ;;
 esac
 
 betplaycito_data_dir=${betplaycito_data_home}/betplaycito-nelson
@@ -29,9 +42,9 @@ betplaycito_config_dir=${betplaycito_config_home}/betplaycito-nelson
 betplaycito_backup_dir=${betplaycito_data_dir}/respaldos
 betplaycito_config_file=${betplaycito_config_dir}/config.local.json
 
+# Python canonicaliza y valida las tres rutas antes de crear nada. Esto evita
+# que un XDG con ``..`` o un enlace simbólico produzca efectos fuera del perfil.
 umask 077
-mkdir -p -- "${betplaycito_data_dir}" "${betplaycito_backup_dir}" "${betplaycito_config_dir}"
-chmod 700 -- "${betplaycito_data_dir}" "${betplaycito_backup_dir}" "${betplaycito_config_dir}" 2>/dev/null || true
 
 # Si ya existe una instancia local, el acceso del menú solo vuelve a abrirla.
 if /usr/bin/python3 -c '

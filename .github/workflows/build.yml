@@ -13,23 +13,31 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Descargar código
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Preparar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
 
       - name: Verificar sintaxis
-        run: python scripts/check_syntax.py
+        run: |
+          python scripts/check_syntax.py
+          sh -n packaging/debian/betplaycito-nelson
+
+      - name: Ejecutar regresiones de seguridad
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
 
       - name: Construir aplicativo
         run: bash scripts/build.sh
 
       - name: Publicar artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: BetPlaycito-Nelson-linux
           path: |
@@ -40,3 +48,28 @@ jobs:
             dist/config.example.json
             dist/LEEME.md
           if-no-files-found: error
+
+  platform-paths:
+    name: Rutas privadas (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Probar límites de almacenamiento
+        run: python -m unittest discover -s tests -v
+
+      - name: Resolver el perfil real de la plataforma
+        run: python -c "from betplaycito.server import _trusted_user_home; p = _trusted_user_home(); assert p.is_absolute() and p.name"

@@ -147,9 +147,9 @@ Opciones operativas relevantes:
 - `--data-dir`: reemplaza la carpeta `datos/`;
 - `--config`: reemplaza la ruta de `config.local.json`;
 - `--no-browser`: evita abrir el navegador automáticamente;
-- `--hash-password`: genera una derivación PBKDF2 interactiva y sale.
+- `--hash-password`: genera una derivación PBKDF2, la guarda atómicamente con permisos privados en la ruta `--config` y sale sin imprimirla.
 
-También existen las variables de entorno `BETPLAYCITO_DATA_DIR`, `BETPLAYCITO_BACKUP_DIR`, `BETPLAYCITO_CONFIG`, `BETPLAYCITO_ADMIN_USER`, `BETPLAYCITO_ADMIN_PASSWORD_HASH`, `BETPLAYCITO_ADMIN_PASSWORD`, `BETPLAYCITO_SETUP_TOKEN` y `BETPLAYCITO_REQUIRE_SETUP`. No guarde valores sensibles en scripts versionados.
+También existen las variables de entorno `BETPLAYCITO_DATA_DIR`, `BETPLAYCITO_BACKUP_DIR`, `BETPLAYCITO_CONFIG`, `BETPLAYCITO_ADMIN_USER`, `BETPLAYCITO_ADMIN_PASSWORD_HASH`, `BETPLAYCITO_ADMIN_PASSWORD`, `BETPLAYCITO_SETUP_TOKEN` y `BETPLAYCITO_REQUIRE_SETUP`. Las tres rutas se normalizan y solo se aceptan bajo el perfil del usuario o la carpeta de la aplicación; esto impide escapes por `..`, prefijos hermanos y enlaces simbólicos. No guarde valores sensibles en scripts versionados.
 
 No ejecute dos instancias contra el mismo archivo de datos salvo que la implementación lo controle explícitamente.
 

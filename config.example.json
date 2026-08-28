@@ -1,4 +1,4 @@
 {
   "admin_username": "TU_USUARIO",
-  "admin_password_hash": "GENERA_EL_HASH_CON_--hash-password"
+  "admin_password_hash": "SE_REEMPLAZA_AL_EJECUTAR_--hash-password"
 }

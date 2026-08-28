@@ -72,7 +72,7 @@ bash scripts/build.sh
 bash scripts/build-deb.sh
 ```
 
-`config.local.json`, las variables de entorno y las opciones `--config` o `--data-dir` permiten personalizar una instalación avanzada antes de crear su primera base. No son necesarios para usar los instaladores normales.
+`config.local.json`, las variables de entorno y las opciones `--config` o `--data-dir` permiten personalizar una instalación avanzada antes de crear su primera base. Las rutas deben quedar dentro del perfil del usuario o de la carpeta de la aplicación. No son necesarios para usar los instaladores normales.
 
 ## 3. Iniciar sesión
 
@@ -100,7 +100,7 @@ Los ejecutables nativos guardan la base fuera del programa y dentro del perfil d
 | Ubuntu/Debian | `~/.local/share/betplaycito-nelson/betplaycito.db` y `respaldos/` | `~/.config/betplaycito-nelson/config.local.json` |
 | Código fuente o zipapp | `datos/betplaycito.db` y `respaldos/` junto al proyecto | `config.local.json` junto al proyecto |
 
-Linux respeta `XDG_DATA_HOME` y `XDG_CONFIG_HOME` cuando contienen rutas absolutas. Cada cuenta del sistema operativo tiene su propia base. El ejecutable portable de Windows también usa `%LOCALAPPDATA%`; la base **no** queda incrustada en el `.exe` ni se guarda en Descargas.
+Linux respeta `XDG_DATA_HOME` y `XDG_CONFIG_HOME` cuando contienen rutas absolutas dentro del perfil real del usuario. Por seguridad no acepta rutas XDG externas, escapes con `..` ni enlaces que salgan de ese perfil. Cada cuenta del sistema operativo tiene su propia base. El ejecutable portable de Windows también usa `%LOCALAPPDATA%`; la base **no** queda incrustada en el `.exe` ni se guarda en Descargas.
 
 Actualizar, reemplazar o desinstalar el programa conserva deliberadamente estas carpetas. Esto evita perder estadísticas, pero significa que desinstalar no equivale a borrar los datos. Para mover la información a otro computador, descargue un respaldo JSON desde **Datos y respaldos** y restáurelo en el equipo nuevo.
 

@@ -29,6 +29,16 @@ cp config.example.json config.local.json
 
 Defina valores propios en la copia. El archivo está cubierto por [`.gitignore`](.gitignore), pero esa exclusión no sustituye revisar lo que se confirma con Git. En una base ya creada, cambiar este archivo no cambia automáticamente el usuario almacenado: use la pantalla de Seguridad.
 
+Genere y guarde la derivación sin mostrarla en la consola:
+
+```bash
+PYTHONPATH=src python3 -m betplaycito --hash-password --config config.local.json
+```
+
+La escritura es atómica, elimina `admin_password` si estaba presente y limita el archivo a modo
+`600` cuando la plataforma lo permite. El comando solo confirma que actualizó
+`config.local.json`; nunca imprime la ruta privada, la contraseña ni su derivación PBKDF2.
+
 Recomendaciones:
 
 - cambie la contraseña inicial pública en equipos compartidos;
@@ -39,7 +49,11 @@ Recomendaciones:
 - cambie la contraseña si el archivo se compartió por error;
 - cierre sesión cuando termine en un equipo compartido.
 
-La base almacena PBKDF2-HMAC-SHA-256 con sal y 600 000 iteraciones, y verifica con comparación resistente a temporización. La plantilla acepta una contraseña inicial para facilitar una configuración personalizada, pero es preferible generar `admin_password_hash` mediante `--hash-password`, limitar `config.local.json` a modo `600` y evitar conservar texto plano. Los secretos de sesión son aleatorios; SQLite guarda únicamente su SHA-256.
+La base almacena PBKDF2-HMAC-SHA-256 con sal y 600 000 iteraciones, y verifica con comparación resistente a temporización. La plantilla acepta una contraseña inicial para facilitar una configuración personalizada, pero es preferible guardar `admin_password_hash` mediante `--hash-password` y evitar conservar texto plano. Los secretos de sesión son aleatorios; SQLite guarda únicamente su SHA-256.
+
+Las rutas operativas se normalizan antes de usarse y deben quedar dentro del perfil del usuario o
+de la carpeta de la aplicación. Esto rechaza escapes por `..`, prefijos hermanos y enlaces
+simbólicos hacia ubicaciones ajenas. Use la exportación JSON para trasladar datos a otra unidad.
 
 ## Red y sesiones
 

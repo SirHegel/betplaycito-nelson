@@ -12,8 +12,10 @@ en las rutas XDG de su propio perfil:
   ~/.local/share/betplaycito-nelson/respaldos/
   ~/.config/betplaycito-nelson/config.local.json (opcional)
 
-Si XDG_DATA_HOME o XDG_CONFIG_HOME están definidos con rutas absolutas, se usan
-en lugar de los valores anteriores. Desinstalar o actualizar el paquete no borra
+Si XDG_DATA_HOME o XDG_CONFIG_HOME están definidos con rutas absolutas dentro
+del perfil real de la cuenta, se usan en lugar de los valores anteriores. Las
+rutas externas, los escapes con ``..`` y los enlaces simbólicos fuera del perfil
+se rechazan antes de crear carpetas. Desinstalar o actualizar el paquete no borra
 estas carpetas ni la información del usuario.
 
 La cuenta pública predeterminada de una instalación nueva es:
