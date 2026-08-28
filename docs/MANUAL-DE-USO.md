@@ -72,7 +72,7 @@ bash scripts/build.sh
 bash scripts/build-deb.sh
 ```
 
-`config.local.json`, las variables de entorno y las opciones `--config` o `--data-dir` permiten personalizar una instalación avanzada antes de crear su primera base. No son necesarios para usar los instaladores normales.
+`config.local.json`, las variables de entorno y las opciones `--config` o `--data-dir` permiten personalizar una instalación avanzada antes de crear su primera base. Las rutas deben quedar dentro del perfil del usuario o de la carpeta de la aplicación. No son necesarios para usar los instaladores normales.
 
 ## 3. Iniciar sesión
 

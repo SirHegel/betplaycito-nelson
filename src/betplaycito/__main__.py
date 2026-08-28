@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .server import hash_password, run_server
+from .server import hash_password, run_server, store_admin_password_hash
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -41,12 +41,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--hash-password",
         action="store_true",
-        help="Generar de forma interactiva un hash PBKDF2 para config.local.json y salir.",
+        help="Generar un hash PBKDF2, guardarlo de forma privada en la configuración y salir.",
     )
     return parser
 
 
-def _print_password_hash() -> int:
+def _store_password_hash(config_path: Path | None = None) -> int:
     first = getpass.getpass("Nueva contraseña: ")
     second = getpass.getpass("Repita la contraseña: ")
     if first != second:
@@ -54,17 +54,21 @@ def _print_password_hash() -> int:
         return 2
     try:
         encoded = hash_password(first)
+        destination = store_admin_password_hash(encoded, config_path=config_path)
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    print(encoded)
+    except (OSError, RuntimeError) as exc:
+        print(f"No se pudo guardar la configuración: {exc}", file=sys.stderr)
+        return 2
+    print(f"Hash PBKDF2 guardado de forma privada en {destination}.")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.hash_password:
-        return _print_password_hash()
+        return _store_password_hash(args.config)
     if not 0 <= args.port <= 65535:
         print("El puerto debe estar entre 0 y 65535.", file=sys.stderr)
         return 2

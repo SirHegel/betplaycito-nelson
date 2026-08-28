@@ -25,6 +25,11 @@ jobs:
       - name: Verificar sintaxis
         run: python scripts/check_syntax.py
 
+      - name: Ejecutar regresiones de seguridad
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+
       - name: Construir aplicativo
         run: bash scripts/build.sh
 
